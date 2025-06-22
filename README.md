@@ -42,6 +42,3 @@ HTML dosyasını tarayıcıda açın veya local server ile çalıştırın.
 
 ## 🌟 Katkıda Bulunma
 Pull request'ler kabul edilir. Büyük değişiklikler için önce issue açın.
-
-## 📝 Lisans
-MIT
