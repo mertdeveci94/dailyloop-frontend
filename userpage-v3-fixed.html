@@ -1,0 +1,4555 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyLoop </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #FFFFFF;
+            --text-color: #1F2937;
+            --card-bg: #FFFFFF;
+            --border-color: #E5E7EB;
+            --hover-bg: #F9FAFB;
+            --accent-color: #8B5CF6;
+            --accent-hover: #7C3AED;
+            --secondary-text: #6B7280;
+            --gradient-from: #8B5CF6;
+            --gradient-to: #EC4899;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #111827;
+            --text-color: #F3F4F6;
+            --card-bg: #1F2937;
+            --border-color: #374151;
+            --hover-bg: #374151;
+            --accent-color: #A78BFA;
+            --accent-hover: #8B5CF6;
+            --secondary-text: #9CA3AF;
+            --gradient-from: #A78BFA;
+            --gradient-to: #F472B6;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        /* Grid Layout */
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            padding: 0;
+            width: 100%;
+        }
+
+        @media (min-width: 640px) {
+            .posts-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .posts-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.75rem;
+            }
+        }
+
+        @media (min-width: 1440px) {
+            .posts-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 2rem;
+            }
+        }
+
+        /* Post Cards */
+        .post-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+            height: 440px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .post-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .post-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background-color: var(--hover-bg);
+            flex-shrink: 0;
+            order: 2; /* Image comes after content */
+        }
+
+        .post-placeholder {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
+            opacity: 0.6;
+            flex-shrink: 0;
+            position: relative;
+            order: 2; /* Placeholder comes after content */
+        }
+
+        .post-image-container {
+            width: 100%;
+            height: 180px;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+            order: 2; /* Container comes after content */
+        }
+
+        .post-image-container:hover .absolute {
+            backdrop-filter: blur(1px);
+        }
+
+        /* Admin Controls */
+        .admin-controls {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            display: flex;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 10;
+        }
+
+        .post-card:hover .admin-controls {
+            opacity: 1;
+        }
+
+        .admin-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .admin-btn.edit {
+            background: rgba(59, 130, 246, 0.9);
+            color: white;
+        }
+
+        .admin-btn.edit:hover {
+            background: rgb(37, 99, 235);
+            transform: scale(1.1);
+        }
+
+        .admin-btn.delete {
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+        }
+
+        .admin-btn.delete:hover {
+            background: rgb(220, 38, 38);
+            transform: scale(1.1);
+        }
+
+        /* My Posts Management Styles */
+        .my-post-card {
+            position: relative;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .my-post-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-color: var(--accent-color);
+        }
+
+        .my-post-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--gradient-from), var(--gradient-to));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .my-post-card:hover::before {
+            opacity: 1;
+        }
+
+        .my-post-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .my-post-card:hover .my-post-actions {
+            opacity: 1;
+        }
+
+        .my-post-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .my-post-btn.edit {
+            background: rgba(59, 130, 246, 0.9);
+            color: white;
+        }
+
+        .my-post-btn.edit:hover {
+            background: rgb(37, 99, 235);
+            transform: scale(1.1);
+        }
+
+        .my-post-btn.delete {
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+        }
+
+        .my-post-btn.delete:hover {
+            background: rgb(220, 38, 38);
+            transform: scale(1.1);
+        }
+
+        .my-post-btn.view {
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+        }
+
+        .my-post-btn.view:hover {
+            background: rgb(22, 163, 74);
+            transform: scale(1.1);
+        }
+
+        .my-post-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+            padding-right: 4rem;
+            line-height: 1.4;
+        }
+
+        .my-post-content {
+            color: var(--secondary-text);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .my-post-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+        }
+
+        .my-post-category {
+            background: var(--accent-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-weight: 500;
+        }
+
+        .my-post-stats {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .post-content {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            order: 1; /* Content comes first */
+        }
+
+        .post-title {
+            font-weight: 700;
+            font-size: 1.3rem;
+            line-height: 1.4;
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .post-description {
+            color: var(--secondary-text);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            flex-grow: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .post-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: auto;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            opacity: 0.85;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--hover-bg);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.95);
+            animation: modalSlideIn 0.3s ease-out forwards;
+        }
+
+        /* Post Detail Modal Specific Styles */
+        #post-detail-modal .modal-content {
+            transform: scale(0.9);
+            opacity: 0;
+            animation: postModalIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Post Detail Content Styles */
+        .post-detail-header {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .post-detail-title {
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1.2;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+        }
+
+        .post-detail-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--secondary-text);
+            font-size: 0.9rem;
+        }
+
+        .post-detail-content {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: var(--text-color);
+            margin-bottom: 2rem;
+        }
+
+        .post-detail-image {
+            width: 100%;
+            max-width: 500px;
+            max-height: 280px;
+            object-fit: cover;
+            border-radius: 1rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .post-detail-media {
+            margin-bottom: 2rem;
+        }
+
+        .post-detail-media .relative {
+            overflow: hidden;
+            border-radius: 1rem;
+        }
+
+        .post-detail-media .group:hover .absolute {
+            backdrop-filter: blur(2px);
+        }
+
+        .post-detail-sidebar {
+            position: sticky;
+            top: 0;
+        }
+
+        .sidebar-section {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .sidebar-section h3 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-color);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Action buttons */
+        .action-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            space-x: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .action-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Share Dropdown */
+        .share-dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .share-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(8px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            margin-bottom: 8px;
+            backdrop-filter: blur(12px);
+        }
+
+        .share-menu.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .share-option {
+            display: flex;
+            align-items: center;
+            space-x: 0.75rem;
+            padding: 0.875rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 0.5rem;
+            margin: 0.25rem;
+            text-decoration: none;
+            color: var(--text-color);
+        }
+
+        .share-option:hover {
+            background: var(--hover-bg);
+            transform: translateX(4px);
+        }
+
+        .share-option i {
+            width: 20px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .share-option span {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* Platform specific colors */
+        .share-x i { color: #000000; }
+        .share-whatsapp i { color: #25D366; }
+        .share-copy i { color: #6366F1; }
+        .share-telegram i { color: #0088cc; }
+        .share-linkedin i { color: #0077B5; }
+
+        /* Dark theme adjustments for share icons */
+        [data-theme="dark"] .share-x i { color: #ffffff; }
+        
+        /* Native Web Share API support */
+        .share-native {
+            display: none;
+        }
+        
+        @supports (navigator-share) {
+            .share-native {
+                display: flex;
+            }
+            .share-manual {
+                display: none;
+            }
+        }
+
+        /* Responsive adjustments for post detail modal */
+        @media (max-width: 1024px) {
+            #post-detail-modal .modal-content {
+                width: 95vw;
+                max-width: none;
+                margin: 1rem;
+            }
+            
+            .post-detail-title {
+                font-size: 1.5rem;
+            }
+            
+            .post-detail-content {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #post-detail-modal .modal-content {
+                width: 100vw;
+                height: 100vh;
+                max-height: 100vh;
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            #post-detail-modal .flex-col {
+                flex-direction: column;
+            }
+            
+            #post-detail-modal .lg\\:w-80 {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+            }
+        }
+
+        /* Animations */
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes modalSlideIn {
+            from { 
+                transform: scale(0.95);
+                opacity: 0;
+            }
+            to { 
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes postModalIn {
+            from { 
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            to { 
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--secondary-text);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Hidden class */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 64px;
+            left: 0;
+            width: 280px;
+            height: calc(100vh - 64px);
+            background-color: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem;
+            overflow-y: auto;
+            z-index: 30;
+            scrollbar-width: thin;
+            scrollbar-color: #75747a transparent;
+        }
+        
+        /* Custom scrollbar for webkit browsers */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 3px;
+            opacity: 0.7;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-hover);
+            opacity: 1;
+        }
+
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-color);
+            font-size: 1.1rem;
+        }
+
+        .category-item {
+            display: flex;
+            align-items: center;
+            padding: 0.55rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-color);
+            text-decoration: none;
+            border: 2px solid transparent;
+            font-weight: 500;
+        }
+
+        .category-item:hover {
+            background-color: var(--hover-bg);
+            transform: translateX(4px);
+            border-color: var(--accent-color);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-item.active {
+            background: linear-gradient(135deg, #7c3aed36, #7c3aed80);
+            color: white;
+            border-color: #a78bfa26;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            transform: translateX(6px);
+        }
+
+        .category-icon {
+            width: 20px;
+            margin-right: 0.75rem;
+        }
+
+        /* Main content with sidebar */
+        .main-with-sidebar {
+            margin-left: 280px;
+            padding-left: 2rem;
+            padding-right: 2rem;
+            max-width: calc(100vw - 280px);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-with-sidebar {
+                margin-left: 0;
+                padding-left: 1rem;
+                padding-right: 1rem;
+                max-width: 100vw;
+            }
+            
+            .sidebar-toggle {
+                display: block;
+            }
+        }
+
+        .sidebar-toggle {
+            display: none;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            min-width: 300px;
+            max-width: 400px;
+            pointer-events: auto;
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left: 4px solid #10B981;
+        }
+
+        .toast.error {
+            border-left: 4px solid #EF4444;
+        }
+
+        .toast.info {
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .toast-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .toast.success .toast-icon {
+            background: #10B981;
+        }
+
+        .toast.error .toast-icon {
+            background: #EF4444;
+        }
+
+        .toast.info .toast-icon {
+            background: var(--accent-color);
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-color);
+            margin-bottom: 2px;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            color: var(--secondary-text);
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--secondary-text);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .toast-close:hover {
+            background: var(--hover-bg);
+        }
+
+        /* User Dropdown */
+        .user-dropdown {
+            position: relative;
+        }
+
+        .user-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            min-width: 200px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+        }
+
+        .user-dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .user-dropdown.show #dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .user-dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .user-dropdown-item:hover {
+            background: var(--hover-bg);
+        }
+
+        .user-dropdown-item:first-child {
+            border-radius: 12px 12px 0 0;
+        }
+
+        .user-dropdown-item:last-child {
+            border-radius: 0 0 12px 12px;
+        }
+
+        .user-dropdown-item i {
+            width: 16px;
+            margin-right: 12px;
+            color: var(--secondary-text);
+        }
+
+        .user-dropdown-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 8px 0;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.05);
+        }
+
+        /* Users Page Styles */
+        .users-page {
+            display: none;
+        }
+
+        .users-page.active {
+            display: block;
+        }
+
+        .users-header {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .users-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-users-header h1 {
+            background: linear-gradient(135deg, #EF4444, #F59E0B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .users-header p {
+            color: var(--secondary-text);
+            font-size: 1.1rem;
+        }
+
+        .users-filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.75rem 1.5rem;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-color);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent-color);
+            background: var(--hover-bg);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .users-search {
+            position: relative;
+            margin-bottom: 2rem;
+            max-width: 400px;
+        }
+
+        .users-search input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            background: var(--card-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        .users-search i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--secondary-text);
+        }
+
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .user-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--gradient-from), var(--gradient-to));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .user-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-color: var(--accent-color);
+        }
+
+        .user-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .user-card-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 2rem;
+            margin: 0 auto 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .user-card:hover .user-card-avatar {
+            transform: scale(1.05);
+        }
+
+        .user-card-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .user-card-username {
+            color: var(--accent-color);
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+        }
+
+        .user-card-bio {
+            color: var(--secondary-text);
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .user-card-stats {
+            display: flex;
+            justify-content: space-around;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .user-stat {
+            text-align: center;
+        }
+
+        .user-stat-number {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-color);
+            display: block;
+        }
+
+        .user-stat-label {
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+            margin-top: 0.25rem;
+        }
+
+        .user-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--accent-color);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .user-badge.admin {
+            background: #EF4444;
+        }
+
+        .user-badge.new {
+            background: #10B981;
+        }
+
+        /* Admin Action Buttons */
+        .user-admin-actions {
+            display: none;
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            gap: 0.5rem;
+        }
+
+        .user-card:hover .user-admin-actions {
+            display: flex;
+        }
+
+        .admin-action-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+            color: white;
+        }
+
+        .admin-action-btn.edit {
+            background: rgba(59, 130, 246, 0.9);
+        }
+
+        .admin-action-btn.edit:hover {
+            background: rgb(37, 99, 235);
+            transform: scale(1.1);
+        }
+
+        .admin-action-btn.delete {
+            background: rgba(239, 68, 68, 0.9);
+        }
+
+        .admin-action-btn.delete:hover {
+            background: rgb(220, 38, 38);
+            transform: scale(1.1);
+        }
+
+        .admin-action-btn.toggle-role {
+            background: rgba(245, 158, 11, 0.9);
+        }
+
+        .admin-action-btn.toggle-role:hover {
+            background: rgb(217, 119, 6);
+            transform: scale(1.1);
+        }
+
+        .admin-stats-bar {
+            background: linear-gradient(135deg, #EF4444, #F59E0B);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .admin-stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .admin-stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+
+        .admin-stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .users-loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--secondary-text);
+        }
+
+        .users-empty {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .users-empty i {
+            font-size: 4rem;
+            color: var(--border-color);
+            margin-bottom: 1rem;
+        }
+
+        .users-empty h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .users-empty p {
+            color: var(--secondary-text);
+        }
+
+        /* User Detail Modal */
+        .user-detail-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .user-detail-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .user-detail-content {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .user-detail-modal.active .user-detail-content {
+            transform: scale(1);
+        }
+
+        .user-detail-header {
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .user-detail-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin: 0 auto 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .user-detail-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .user-detail-username {
+            color: var(--accent-color);
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .user-detail-bio {
+            color: var(--secondary-text);
+            line-height: 1.5;
+        }
+
+        .user-detail-body {
+            padding: 2rem;
+        }
+
+        .user-detail-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .user-detail-stat {
+            text-align: center;
+            padding: 1rem;
+            background: var(--hover-bg);
+            border-radius: 0.75rem;
+        }
+
+        .user-detail-stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            display: block;
+        }
+
+        .user-detail-stat-label {
+            font-size: 0.9rem;
+            color: var(--secondary-text);
+            margin-top: 0.25rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .users-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .users-filters {
+                flex-direction: column;
+            }
+            
+            .filter-btn {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-[var(--card-bg)] border-b border-[var(--border-color)] sticky top-0 z-40 backdrop-blur-sm bg-opacity-95">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <!-- Left Side - Mobile Sidebar Toggle -->
+                    <div class="flex items-center">
+                        <button id="sidebar-toggle" class="sidebar-toggle theme-toggle lg:hidden mr-3" aria-label="Toggle sidebar">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <!-- Logo -->
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-gradient-to-br from-[var(--gradient-from)] to-[var(--gradient-to)] rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-infinity text-white text-lg"></i>
+                            </div>
+                            <h1 class="text-2xl font-bold bg-gradient-to-r from-[var(--gradient-from)] to-[var(--gradient-to)] bg-clip-text text-transparent">
+                                DailyLoop
+                            </h1>
+                        </div>
+                    </div>
+
+                    <!-- Right Side - Actions -->
+                    <div class="flex items-center space-x-3">
+                        <!-- Theme Toggle -->
+                        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+                            <i class="fas fa-moon theme-icon-moon"></i>
+                            <i class="fas fa-sun theme-icon-sun hidden"></i>
+                        </button>
+
+                        <!-- Auth Buttons -->
+                        <div id="auth-buttons" class="flex items-center space-x-3">
+                            <button id="login-btn" class="px-4 py-2 text-base text-[var(--accent-color)] hover:bg-[var(--hover-bg)] rounded-lg transition-colors font-medium">
+                                Giriş Yap
+                            </button>
+                            <button id="register-btn" class="px-4 py-2 text-base bg-[var(--accent-color)] text-white hover:bg-[var(--accent-hover)] rounded-lg transition-colors font-medium">
+                                Kayıt Ol
+                            </button>
+                        </div>
+
+                        <!-- User Menu (hidden by default) -->
+                        <div id="user-menu" class="hidden user-dropdown">
+                            <div class="flex items-center space-x-3 cursor-pointer" id="user-toggle">
+                                <div id="user-avatar" class="user-avatar">
+                                    <span id="user-initial">U</span>
+                                </div>
+                                <div class="hidden sm:block">
+                                    <div class="text-sm font-medium text-[var(--text-color)]" id="user-display-name">User</div>
+                                    <div class="text-sm text-[var(--accent-color)] font-medium" id="user-display-username">@username</div>
+                                </div>
+                                <i class="fas fa-chevron-down text-[var(--secondary-text)] text-xs transition-transform" id="dropdown-arrow"></i>
+                            </div>
+                            <div id="user-dropdown-menu" class="user-dropdown-menu">
+                                <button class="user-dropdown-item" id="profile-btn">
+                                    <i class="fas fa-user"></i>
+                                    <span>Profil</span>
+                                </button>
+                                <button class="user-dropdown-item" id="my-posts-btn">
+                                    <i class="fas fa-file-text"></i>
+                                    <span>Gönderilerim</span>
+                                </button>
+                                <button class="user-dropdown-item" id="settings-btn">
+                                    <i class="fas fa-cog"></i>
+                                    <span>Ayarlar</span>
+                                </button>
+                                <div class="user-dropdown-divider"></div>
+                                <button class="user-dropdown-item" id="logout-btn">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    <span>Çıkış Yap</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <!-- Categories Section -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Kategoriler</h3>
+                <div id="categories-list">
+                    <a href="#" class="category-item active" data-category="">
+                        <i class="fas fa-home category-icon"></i>
+                        Tümü
+                    </a>
+                    <a href="#" class="category-item" data-category="Teknoloji">
+                        <i class="fas fa-microchip category-icon"></i>
+                        Teknoloji
+                    </a>
+                    <a href="#" class="category-item" data-category="Eğitim">
+                        <i class="fas fa-graduation-cap category-icon"></i>
+                        Eğitim
+                    </a>
+                    <a href="#" class="category-item" data-category="Kariyer">
+                        <i class="fas fa-briefcase category-icon"></i>
+                        Kariyer
+                    </a>
+                    <a href="#" class="category-item" data-category="Bilim">
+                        <i class="fas fa-flask category-icon"></i>
+                        Bilim
+                    </a>
+                    <a href="#" class="category-item" data-category="Sanat & Tasarım">
+                        <i class="fas fa-palette category-icon"></i>
+                        Sanat & Tasarım
+                    </a>
+                    <a href="#" class="category-item" data-category="Yaşam">
+                        <i class="fas fa-heart category-icon"></i>
+                        Yaşam
+                    </a>
+                    <a href="#" class="category-item" data-category="Girişimcilik">
+                        <i class="fas fa-rocket category-icon"></i>
+                        Girişimcilik
+                    </a>
+                    <a href="#" class="category-item" data-category="Seyahat">
+                        <i class="fas fa-plane category-icon"></i>
+                        Seyahat
+                    </a>
+                    <a href="#" class="category-item" data-category="Diğerleri">
+                        <i class="fas fa-ellipsis-h category-icon"></i>
+                        Diğerleri
+                    </a>
+                </div>
+            </div>
+
+            <!-- Admin Panel Section (only visible to admins) -->
+            <div class="sidebar-section" id="admin-panel-section" style="display: none;">
+                <h3 class="sidebar-title">
+                    <i class="fas fa-crown mr-2 text-yellow-500"></i>
+                    Admin Paneli
+                </h3>
+                <div id="admin-navigation-list">
+                    <a href="#" class="category-item" id="users-admin-link" onclick="showUsersAdminPage()">
+                        <i class="fas fa-users-cog category-icon"></i>
+                        Kullanıcı Yönetimi
+                    </a>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">İstatistikler</h3>
+                <div class="space-y-2 text-sm text-[var(--secondary-text)]">
+                    <div class="flex justify-between">
+                        <span>Toplam Gönderi:</span>
+                        <span id="total-posts">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Aktif Kullanıcı:</span>
+                        <span>156</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-with-sidebar max-w-none px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Search Section -->
+            <div id="search-section" class="mb-8">
+                <div class="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl p-6 shadow-sm">
+                    <div class="flex items-center space-x-4">
+                        <!-- Create Post Button (for logged in users) -->
+                        <button id="create-post-btn" class="btn-primary hidden">
+                            <i class="fas fa-plus mr-2"></i>
+                            Paylaş
+                        </button>
+                        <div class="flex-1 relative">
+                            <input type="text" id="search-input" placeholder="Konular, yazarlar veya etiketler ara..." 
+                                   class="w-full px-4 py-3 pl-12 bg-[var(--hover-bg)] border border-[var(--border-color)] rounded-lg text-[var(--text-color)] placeholder-[var(--secondary-text)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:border-transparent transition-all">
+                            <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--secondary-text)]"></i>
+                        </div>
+                        <button id="search-btn" class="btn-primary">
+                            <i class="fas fa-search mr-2"></i>
+                            Ara
+                        </button>
+                    </div>
+                    
+                    <!-- Search Results -->
+                    <div id="search-results" class="hidden mt-4 border-t border-[var(--border-color)] pt-4">
+                        <h3 class="text-sm font-medium text-[var(--text-color)] mb-3">Arama Sonuçları</h3>
+                        <div id="search-results-container" class="space-y-2">
+                            <!-- Search results will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Posts Grid -->
+            <div id="posts-container">
+                <div id="posts-grid" class="posts-grid">
+                    <!-- Posts will be loaded here -->
+                </div>
+
+                <!-- Loading -->
+                <div id="loading" class="loading hidden">
+                    <div class="spinner"></div>
+                    <p class="mt-2">Yükleniyor...</p>
+                </div>
+
+                <!-- Load More -->
+                <div id="load-more-container" class="text-center mt-8">
+                    <button id="load-more-btn" class="btn-primary hidden">
+                        Daha Fazla Yükle
+                    </button>
+                    <p id="no-more-posts" class="text-[var(--secondary-text)] hidden">
+                        Tüm gönderiler yüklendi
+                    </p>
+                </div>
+            </div>
+
+            <!-- Admin Users Page -->
+            <div id="users-page" class="users-page">
+                <!-- Admin Users Header -->
+                <div class="users-header admin-users-header">
+                    <h1><i class="fas fa-users-cog mr-3"></i>Kullanıcı Yönetim Paneli</h1>
+                    <p>Kullanıcıları görüntüleyin, düzenleyin ve yönetin</p>
+                </div>
+
+                <!-- Admin Stats Bar -->
+                <div class="admin-stats-bar" id="admin-stats-bar">
+                    <div class="admin-stat-item">
+                        <div class="admin-stat-number" id="total-users-stat">-</div>
+                        <div class="admin-stat-label">Toplam Kullanıcı</div>
+                    </div>
+                    <div class="admin-stat-item">
+                        <div class="admin-stat-number" id="admin-users-stat">-</div>
+                        <div class="admin-stat-label">Admin</div>
+                    </div>
+                    <div class="admin-stat-item">
+                        <div class="admin-stat-number" id="new-users-stat">-</div>
+                        <div class="admin-stat-label">Yeni Üyeler</div>
+                    </div>
+                    <div class="admin-stat-item">
+                        <div class="admin-stat-number" id="active-users-stat">-</div>
+                        <div class="admin-stat-label">Aktif Kullanıcı</div>
+                    </div>
+                </div>
+
+                <!-- Users Filters -->
+                <div class="users-filters">
+                    <button class="filter-btn active" data-filter="all">
+                        <i class="fas fa-users mr-2"></i>
+                        Tümü
+                    </button>
+                    <button class="filter-btn" data-filter="new">
+                        <i class="fas fa-star mr-2"></i>
+                        Yeni Üyeler
+                    </button>
+                    <button class="filter-btn" data-filter="active">
+                        <i class="fas fa-fire mr-2"></i>
+                        Aktif Kullanıcılar
+                    </button>
+                    <button class="filter-btn" data-filter="admin">
+                        <i class="fas fa-crown mr-2"></i>
+                        Yöneticiler
+                    </button>
+                </div>
+
+                <!-- Users Search -->
+                <div class="users-search">
+                    <input type="text" id="users-search-input" placeholder="Kullanıcı ara...">
+                    <i class="fas fa-search"></i>
+                </div>
+
+                <!-- Users Grid -->
+                <div id="users-grid" class="users-grid">
+                    <!-- Users will be loaded here -->
+                </div>
+
+                <!-- Users Loading -->
+                <div id="users-loading" class="users-loading hidden">
+                    <div class="spinner"></div>
+                    <p class="mt-2">Kullanıcılar yükleniyor...</p>
+                </div>
+
+                <!-- Users Empty -->
+                <div id="users-empty" class="users-empty hidden">
+                    <i class="fas fa-users"></i>
+                    <h3>Kullanıcı bulunamadı</h3>
+                    <p>Arama kriterlerinize uygun kullanıcı bulunamadı.</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- User Detail Modal -->
+        <div id="user-detail-modal" class="user-detail-modal">
+            <div class="user-detail-content">
+                <div class="user-detail-header">
+                    <div class="user-detail-avatar" id="user-detail-avatar">
+                        <span id="user-detail-initial">U</span>
+                    </div>
+                    <div class="user-detail-name" id="user-detail-name">Kullanıcı Adı</div>
+                    <div class="user-detail-username" id="user-detail-username">@username</div>
+                    <div class="user-detail-bio" id="user-detail-bio">Kullanıcı biyografisi burada görünecek.</div>
+                    <button onclick="closeUserDetail()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; color: var(--secondary-text); cursor: pointer;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="user-detail-body">
+                    <div class="user-detail-stats" id="user-detail-stats">
+                        <!-- User stats will be loaded here -->
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-color); margin-bottom: 1rem;">Son Gönderileri</h3>
+                        <div id="user-recent-posts">
+                            <!-- Recent posts will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Post Modal -->
+        <div id="create-post-modal" class="modal">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="modal-title" class="text-xl font-bold">Yeni Gönderi Oluştur</h2>
+                    <button id="close-modal" class="text-[var(--secondary-text)] hover:text-[var(--text-color)]">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="create-post-form">
+                    <div class="mb-4">
+                        <label for="post-title" class="block text-sm font-medium mb-2">Başlık</label>
+                        <input type="text" id="post-title" name="title" required 
+                               class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="post-content" class="block text-sm font-medium mb-2">İçerik</label>
+                        <textarea id="post-content" name="content" required rows="4"
+                                  class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]"></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="post-category" class="block text-sm font-medium mb-2">Kategori</label>
+                        <select id="post-category" name="category" 
+                                class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                            <option value="">Kategori seçin</option>
+                            <option value="Teknoloji">Teknoloji</option>
+                            <option value="Eğitim">Eğitim</option>
+                            <option value="Kariyer">Kariyer</option>
+                            <option value="Bilim">Bilim</option>
+                            <option value="Sanat & Tasarım">Sanat & Tasarım</option>
+                            <option value="Yaşam">Yaşam</option>
+                            <option value="Girişimcilik">Girişimcilik</option>
+                            <option value="Seyahat">Seyahat</option>
+                            <option value="Diğerleri">Diğerleri</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="post-url" class="block text-sm font-medium mb-2">
+                            <i class="fas fa-link mr-1"></i>
+                            Kaynak/Video Link (opsiyonel)
+                        </label>
+                        <input type="url" id="post-url" name="postUrl" 
+                               placeholder="https://example.com/article veya https://youtube.com/watch?v=..."
+                               class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                        <p class="text-xs text-[var(--secondary-text)] mt-1">Makale, blog yazısı, YouTube, Vimeo veya herhangi bir link</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="post-image" class="block text-sm font-medium mb-2">
+                            <i class="fas fa-image mr-1"></i>
+                            Görsel (opsiyonel)
+                        </label>
+                        <input type="file" id="post-image" name="image" accept="image/*"
+                               class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                        <div class="mt-2" id="remove-image-option" style="display: none;">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="remove-image-main" name="removeImage" class="rounded border-[var(--border-color)] text-red-600 focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50">
+                                <span class="ml-2 text-sm text-red-600">
+                                    <i class="fas fa-trash mr-1"></i>
+                                    Mevcut görseli kaldır
+                                </span>
+                            </label>
+                        </div>
+                        <p class="text-xs text-[var(--secondary-text)] mt-1">JPG, PNG, GIF formatları desteklenir</p>
+                    </div>
+
+                    <div class="flex justify-center space-x-4 mt-6">
+                        <button type="button" id="cancel-post" class="px-6 py-2 border border-[var(--border-color)] rounded-lg text-[var(--text-color)] hover:bg-[var(--hover-bg)] transition-colors">
+                            İptal
+                        </button>
+                        <button type="submit" id="submit-btn" class="btn-primary px-6">
+                            Yayınla
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Post Detail Modal -->
+        <div id="post-detail-modal" class="modal">
+            <div class="modal-content max-w-6xl w-[95vw] max-h-[95vh] overflow-hidden p-0 rounded-2xl bg-[var(--card-bg)] shadow-2xl">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between p-6 border-b border-[var(--border-color)] bg-[var(--card-bg)]">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-8 h-8 bg-gradient-to-br from-[var(--gradient-from)] to-[var(--gradient-to)] rounded-lg flex items-center justify-center">
+                            <i class="fas fa-article text-white text-sm"></i>
+                        </div>
+                        <h2 class="text-lg font-semibold text-[var(--text-color)]">Gönderi Detayı</h2>
+                    </div>
+                    <button id="close-detail-modal" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--hover-bg)] transition-colors text-[var(--secondary-text)] hover:text-[var(--text-color)]">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="flex flex-col lg:flex-row h-full max-h-[calc(95vh-80px)]">
+                    <!-- Main Content -->
+                    <div class="flex-1 overflow-y-auto">
+                        <div id="detail-content" class="p-8">
+                            <!-- Detail content will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Sidebar (Actions & Meta) -->
+                    <div class="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-[var(--border-color)] bg-[var(--hover-bg)] p-6">
+                        <div id="detail-sidebar">
+                            <!-- Sidebar content will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Modal -->
+        <div id="login-modal" class="modal">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">Giriş Yap</h2>
+                    <button id="close-login-modal" class="text-[var(--secondary-text)] hover:text-[var(--text-color)]">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="login-form">
+                    <div class="mb-4">
+                        <label for="login-email" class="block text-sm font-medium mb-2">E-posta</label>
+                        <input type="email" id="login-email" name="email" required 
+                               class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="login-password" class="block text-sm font-medium mb-2">Şifre</label>
+                        <input type="password" id="login-password" name="password" required 
+                               class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                    </div>
+
+                    <div class="flex justify-center space-x-4 mt-6">
+                        <button type="submit" class="btn-primary px-6">
+                            Giriş Yap
+                        </button>
+                        <button type="button" id="cancel-login" class="px-6 py-2 border border-[var(--border-color)] rounded-lg text-[var(--text-color)] hover:bg-[var(--hover-bg)] transition-colors">
+                            İptal
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-6">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-[var(--border-color)]"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-[var(--card-bg)] text-[var(--secondary-text)]">veya</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-2 gap-3">
+                        <button id="login-github" class="flex items-center justify-center px-4 py-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--hover-bg)] transition-colors">
+                            <i class="fab fa-github text-xl mr-2"></i>
+                            <span class="text-sm font-medium">GitHub</span>
+                        </button>
+                        <button id="login-google" class="flex items-center justify-center px-4 py-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--hover-bg)] transition-colors">
+                            <i class="fab fa-google text-xl mr-2 text-red-500"></i>
+                            <span class="text-sm font-medium">Google</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                    <span class="text-sm text-[var(--secondary-text)]">Hesabınız yok mu? </span>
+                    <button id="switch-to-register" class="text-sm text-[var(--accent-color)] hover:underline">
+                        Kayıt Ol
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Modal -->
+        <div id="register-modal" class="modal">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">Kayıt Ol</h2>
+                    <button id="close-register-modal" class="text-[var(--secondary-text)] hover:text-[var(--text-color)]">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="register-form">
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                            <label for="register-firstname" class="block text-sm font-medium mb-2">Ad</label>
+                            <input type="text" id="register-firstname" name="firstName" required 
+                                   placeholder="Adınız"
+                                   class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                        </div>
+                        <div>
+                            <label for="register-lastname" class="block text-sm font-medium mb-2">Soyad</label>
+                            <input type="text" id="register-lastname" name="lastName" required 
+                                   placeholder="Soyadınız"
+                                   class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="register-username" class="block text-sm font-medium mb-2">Kullanıcı Adı</label>
+                        <input type="text" id="register-username" name="username" required minlength="3" pattern="[a-zA-Z0-9_]+"
+                               placeholder="ornek_kullanici" 
+                               class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                        <p class="text-xs text-[var(--secondary-text)] mt-1">En az 3 karakter, sadece harf, rakam ve alt çizgi</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="register-email" class="block text-sm font-medium mb-2">E-posta</label>
+                        <input type="email" id="register-email" name="email" required 
+                               class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="register-password" class="block text-sm font-medium mb-2">Şifre (en az 6 karakter)</label>
+                        <input type="password" id="register-password" name="password" required minlength="6"
+                               class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="register-password-confirm" class="block text-sm font-medium mb-2">Şifre Tekrar</label>
+                        <input type="password" id="register-password-confirm" name="passwordConfirm" required minlength="6"
+                               class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                        <p class="text-xs text-[var(--secondary-text)] mt-1">Şifrenizi tekrar girin</p>
+                    </div>
+
+                    <div class="flex justify-center space-x-4 mt-6">
+                        <button type="submit" class="btn-primary px-6">
+                            Kayıt Ol
+                        </button>
+                        <button type="button" id="cancel-register" class="px-6 py-2 border border-[var(--border-color)] rounded-lg text-[var(--text-color)] hover:bg-[var(--hover-bg)] transition-colors">
+                            İptal
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-6">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-[var(--border-color)]"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-[var(--card-bg)] text-[var(--secondary-text)]">veya</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-2 gap-3">
+                        <button id="register-github" class="flex items-center justify-center px-4 py-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--hover-bg)] transition-colors">
+                            <i class="fab fa-github text-xl mr-2"></i>
+                            <span class="text-sm font-medium">GitHub</span>
+                        </button>
+                        <button id="register-google" class="flex items-center justify-center px-4 py-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--hover-bg)] transition-colors">
+                            <i class="fab fa-google text-xl mr-2 text-red-500"></i>
+                            <span class="text-sm font-medium">Google</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                    <span class="text-sm text-[var(--secondary-text)]">Zaten hesabınız var mı? </span>
+                    <button id="switch-to-login" class="text-sm text-[var(--accent-color)] hover:underline">
+                        Giriş Yap
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Settings Modal -->
+        <div id="profile-modal" class="modal">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">Profil Ayarları</h2>
+                    <button id="close-profile-modal" class="text-[var(--secondary-text)] hover:text-[var(--text-color)]">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="profile-form">
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                            <label for="profile-firstname" class="block text-sm font-medium mb-2">Ad</label>
+                            <input type="text" id="profile-firstname" name="firstName" required 
+                                   placeholder="Adınız"
+                                   class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                        </div>
+                        <div>
+                            <label for="profile-lastname" class="block text-sm font-medium mb-2">Soyad</label>
+                            <input type="text" id="profile-lastname" name="lastName" required 
+                                   placeholder="Soyadınız"
+                                   class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="profile-email" class="block text-sm font-medium mb-2">E-posta</label>
+                        <input type="email" id="profile-email" name="email" disabled
+                               class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--hover-bg)] text-[var(--secondary-text)] cursor-not-allowed">
+                        <p class="text-xs text-[var(--secondary-text)] mt-1">E-posta adresi değiştirilemez</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="profile-bio" class="block text-sm font-medium mb-2">Bio</label>
+                        <textarea id="profile-bio" name="bio" rows="3" placeholder="Kendiniz hakkında kısa bir açıklama..."
+                                  class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]"></textarea>
+                    </div>
+
+                    <div class="flex justify-center space-x-4 mt-6">
+                        <button type="button" id="cancel-profile" class="px-6 py-2 border border-[var(--border-color)] rounded-lg text-[var(--text-color)] hover:bg-[var(--hover-bg)] transition-colors">
+                            İptal
+                        </button>
+                        <button type="submit" class="btn-primary px-6">
+                            Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- My Posts Modal -->
+        <div id="my-posts-modal" class="modal">
+            <div class="modal-content max-w-6xl">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-[var(--gradient-from)] to-[var(--gradient-to)] rounded-lg flex items-center justify-center">
+                            <i class="fas fa-cog text-white text-sm"></i>
+                        </div>
+                        <h2 class="text-xl font-bold">Gönderilerimi Yönet</h2>
+                    </div>
+                    <button id="close-my-posts-modal" class="text-[var(--secondary-text)] hover:text-[var(--text-color)]">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div id="my-posts-container">
+                    <div id="my-posts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- User's posts will be loaded here -->
+                    </div>
+                    
+                    <div id="my-posts-empty" class="hidden text-center py-12">
+                        <i class="fas fa-file-text text-6xl text-[var(--secondary-text)] mb-4"></i>
+                        <h3 class="text-lg font-medium text-[var(--text-color)] mb-2">Henüz gönderi paylaşmadınız</h3>
+                        <p class="text-[var(--secondary-text)] mb-6">İlk gönderinizi paylaşarak başlayın!</p>
+                        <button id="create-first-post" class="btn-primary">
+                            <i class="fas fa-plus mr-2"></i>
+                            İlk Gönderimi Paylaş
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Post Modal -->
+        <div id="edit-post-modal" class="modal">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">Gönderiyi Düzenle</h2>
+                    <button id="close-edit-modal" class="text-[var(--secondary-text)] hover:text-[var(--text-color)]">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="edit-post-form">
+                    <input type="hidden" id="edit-post-id" name="postId">
+                    
+                    <div class="mb-4">
+                        <label for="edit-post-title" class="block text-sm font-medium mb-2">Başlık</label>
+                        <input type="text" id="edit-post-title" name="title" required 
+                               class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="edit-post-content" class="block text-sm font-medium mb-2">İçerik</label>
+                        <textarea id="edit-post-content" name="content" required rows="4"
+                                  class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]"></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="edit-post-category" class="block text-sm font-medium mb-2">Kategori</label>
+                        <select id="edit-post-category" name="category" 
+                                class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                            <option value="">Kategori seçin</option>
+                            <option value="Teknoloji">Teknoloji</option>
+                            <option value="Eğitim">Eğitim</option>
+                            <option value="Kariyer">Kariyer</option>
+                            <option value="Bilim">Bilim</option>
+                            <option value="Sanat & Tasarım">Sanat & Tasarım</option>
+                            <option value="Yaşam">Yaşam</option>
+                            <option value="Girişimcilik">Girişimcilik</option>
+                            <option value="Seyahat">Seyahat</option>
+                            <option value="Diğerleri">Diğerleri</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="edit-post-image" class="block text-sm font-medium mb-2">
+                            <i class="fas fa-image mr-1"></i>
+                            Görsel (opsiyonel)
+                        </label>
+                        <input type="file" id="edit-post-image" name="image" accept="image/*"
+                               class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                        <div class="mt-2">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="remove-current-image" name="removeImage" class="rounded border-[var(--border-color)] text-red-600 focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50">
+                                <span class="ml-2 text-sm text-red-600">
+                                    <i class="fas fa-trash mr-1"></i>
+                                    Mevcut görseli kaldır
+                                </span>
+                            </label>
+                        </div>
+                        <p class="text-xs text-[var(--secondary-text)] mt-1">JPG, PNG, GIF formatları desteklenir. Yeni görsel yüklerseniz mevcut görsel değiştirilir.</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="edit-post-url" class="block text-sm font-medium mb-2">
+                            <i class="fas fa-link mr-1"></i>
+                            Kaynak/Video Link (opsiyonel)
+                        </label>
+                        <input type="url" id="edit-post-url" name="postUrl" 
+                               placeholder="https://example.com/article veya https://youtube.com/watch?v=..."
+                               class="w-full px-3 py-2 border border-[var(--border-color)] rounded-md bg-[var(--card-bg)] text-[var(--text-color)]">
+                        <p class="text-xs text-[var(--secondary-text)] mt-1">Makale, blog yazısı, YouTube, Vimeo veya herhangi bir link</p>
+                    </div>
+
+                    <div class="flex justify-center space-x-4 mt-6">
+                        <button type="button" id="delete-post-btn" class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                            <i class="fas fa-trash mr-2"></i>
+                            Sil
+                        </button>
+                        <button type="button" id="cancel-edit" class="px-6 py-2 border border-[var(--border-color)] rounded-lg text-[var(--text-color)] hover:bg-[var(--hover-bg)] transition-colors">
+                            İptal
+                        </button>
+                        <button type="submit" class="btn-primary px-6">
+                            Güncelle
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Toast Notification Container -->
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <script>
+        console.log('🚀 DailyLoop starting...');
+
+        // Configuration
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000/api' 
+            : 'https://dailyloop-backend-production.up.railway.app/api';
+
+        // State
+        let posts = [];
+        let currentPage = 1;
+        let isLoading = false;
+        let hasMorePosts = true;
+        let currentUser = null;
+        let currentCategory = '';
+        let editingPost = null; // For admin edit mode
+        
+        // Admin helper functions
+        function isAdmin() {
+            return currentUser && currentUser.role === 'admin';
+        }
+
+        async function deleteAdminPost(postId) {
+            if (!confirm('Bu gönderiyi silmek istediğinizden emin misiniz?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/posts/${postId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId: currentUser.id })
+                });
+
+                if (response.ok) {
+                    showSuccessMessage('Gönderi başarıyla silindi.');
+                    // Remove from UI
+                    posts = posts.filter(post => post._id !== postId);
+                    elements.postsGrid.innerHTML = '';
+                    for (const post of posts) {
+                        await renderPost(post);
+                    }
+                } else {
+                    const error = await response.json();
+                    showErrorMessage(error.message || 'Gönderi silinirken hata oluştu.');
+                }
+            } catch (error) {
+                console.error('❌ Admin delete error:', error);
+                showErrorMessage('Gönderi silinirken hata oluştu.');
+            }
+        }
+
+        function editAdminPost(postId) {
+            const post = posts.find(p => p._id === postId);
+            if (!post) {
+                showErrorMessage('Gönderi bulunamadı.');
+                return;
+            }
+
+            // Set edit mode
+            editingPost = post;
+            
+            // Update modal UI for edit mode
+            document.getElementById('modal-title').textContent = 'Gönderi Düzenle';
+            document.getElementById('submit-btn').textContent = 'Güncelle';
+            
+            // Fill form with existing data
+            document.getElementById('post-title').value = post.title || '';
+            document.getElementById('post-content').value = post.content || '';
+            document.getElementById('post-category').value = post.category || '';
+            document.getElementById('post-url').value = post.sourceUrl || post.videoUrl || '';
+            
+            // Show/hide remove image option based on existing image
+            const removeImageOption = document.getElementById('remove-image-option');
+            const removeImageCheckbox = document.getElementById('remove-image-main');
+            if (post.imageUrl) {
+                removeImageOption.style.display = 'block';
+                removeImageCheckbox.checked = false; // Reset checkbox
+            } else {
+                removeImageOption.style.display = 'none';
+            }
+            
+            // Open modal
+            elements.createModal.classList.add('active');
+        }
+
+        // DOM Elements
+        let elements = {};
+
+        // Initialize elements after DOM loads
+        function initElements() {
+            console.log('📋 Initializing elements...');
+            
+            elements = {
+                themeToggle: document.getElementById('theme-toggle'),
+                themeMoon: document.querySelector('.theme-icon-moon'),
+                themeSun: document.querySelector('.theme-icon-sun'),
+                sidebarToggle: document.getElementById('sidebar-toggle'),
+                sidebar: document.getElementById('sidebar'),
+                loginBtn: document.getElementById('login-btn'),
+                registerBtn: document.getElementById('register-btn'),
+                authButtons: document.getElementById('auth-buttons'),
+                userMenu: document.getElementById('user-menu'),
+                userToggle: document.getElementById('user-toggle'),
+                userAvatar: document.getElementById('user-avatar'),
+                userInitial: document.getElementById('user-initial'),
+                userDisplayName: document.getElementById('user-display-name'),
+                userDisplayUsername: document.getElementById('user-display-username'),
+                dropdownArrow: document.getElementById('dropdown-arrow'),
+                userDropdownMenu: document.getElementById('user-dropdown-menu'),
+                profileBtn: document.getElementById('profile-btn'),
+                myPostsBtn: document.getElementById('my-posts-btn'),
+                settingsBtn: document.getElementById('settings-btn'),
+                logoutBtn: document.getElementById('logout-btn'),
+                searchSection: document.getElementById('search-section'),
+                searchInput: document.getElementById('search-input'),
+                searchBtn: document.getElementById('search-btn'),
+                searchResults: document.getElementById('search-results'),
+                searchResultsContainer: document.getElementById('search-results-container'),
+                createPostBtn: document.getElementById('create-post-btn'),
+                toastContainer: document.getElementById('toast-container'),
+                postsGrid: document.getElementById('posts-grid'),
+                loading: document.getElementById('loading'),
+                loadMoreBtn: document.getElementById('load-more-btn'),
+                noMorePosts: document.getElementById('no-more-posts'),
+                totalPosts: document.getElementById('total-posts'),
+                createModal: document.getElementById('create-post-modal'),
+                closeModal: document.getElementById('close-modal'),
+                cancelPost: document.getElementById('cancel-post'),
+                createForm: document.getElementById('create-post-form'),
+                detailModal: document.getElementById('post-detail-modal'),
+                closeDetailModal: document.getElementById('close-detail-modal'),
+                loginModal: document.getElementById('login-modal'),
+                closeLoginModal: document.getElementById('close-login-modal'),
+                cancelLogin: document.getElementById('cancel-login'),
+                loginForm: document.getElementById('login-form'),
+                switchToRegister: document.getElementById('switch-to-register'),
+                registerModal: document.getElementById('register-modal'),
+                closeRegisterModal: document.getElementById('close-register-modal'),
+                cancelRegister: document.getElementById('cancel-register'),
+                registerForm: document.getElementById('register-form'),
+                switchToLogin: document.getElementById('switch-to-login'),
+                categoriesList: document.getElementById('categories-list'),
+                profileModal: document.getElementById('profile-modal'),
+                closeProfileModal: document.getElementById('close-profile-modal'),
+                profileForm: document.getElementById('profile-form'),
+                cancelProfile: document.getElementById('cancel-profile'),
+                myPostsModal: document.getElementById('my-posts-modal'),
+                closeMyPostsModal: document.getElementById('close-my-posts-modal'),
+                myPostsGrid: document.getElementById('my-posts-grid'),
+                myPostsEmpty: document.getElementById('my-posts-empty'),
+                createFirstPost: document.getElementById('create-first-post'),
+                editPostModal: document.getElementById('edit-post-modal'),
+                closeEditModal: document.getElementById('close-edit-modal'),
+                editPostForm: document.getElementById('edit-post-form'),
+                cancelEdit: document.getElementById('cancel-edit'),
+                deletePostBtn: document.getElementById('delete-post-btn')
+            };
+
+            // Verify critical elements exist
+            const missing = Object.entries(elements).filter(([key, el]) => !el);
+            if (missing.length > 0) {
+                console.error('❌ Missing elements:', missing.map(([key]) => key));
+                return false;
+            }
+
+            console.log('✅ All elements found');
+            return true;
+        }
+
+        // Theme functions
+        function toggleTheme() {
+            console.log('🎨 Toggle theme');
+            
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Update icons
+            if (newTheme === 'dark') {
+                elements.themeMoon.classList.add('hidden');
+                elements.themeSun.classList.remove('hidden');
+            } else {
+                elements.themeMoon.classList.remove('hidden');
+                elements.themeSun.classList.add('hidden');
+            }
+            
+            console.log('🎨 Theme changed to:', newTheme);
+        }
+
+        function initTheme() {
+            console.log('🎨 Initializing theme...');
+            
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            if (savedTheme === 'dark') {
+                elements.themeMoon.classList.add('hidden');
+                elements.themeSun.classList.remove('hidden');
+            }
+            
+            console.log('🎨 Theme initialized:', savedTheme);
+        }
+
+        // API functions
+        async function apiRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('❌ API Error:', error);
+                throw error;
+            }
+        }
+
+        // Authentication functions
+        function updateUIForUser(user) {
+            console.log('👤 Updating UI for user:', user?.name || 'null');
+            
+            // Set global currentUser
+            currentUser = user;
+            console.log('🔄 currentUser updated:', currentUser);
+            
+            if (user) {
+                elements.authButtons.classList.add('hidden');
+                elements.userMenu.classList.remove('hidden');
+                elements.createPostBtn.classList.remove('hidden'); // Show create post button in search area
+                
+                // Set user initials in avatar (first letter of name and surname)
+                if (elements.userInitial) {
+                    const nameParts = user.name.trim().split(' ');
+                    let initials = nameParts[0].charAt(0).toUpperCase();
+                    if (nameParts.length > 1) {
+                        initials += nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+                    }
+                    elements.userInitial.textContent = initials;
+                }
+                
+                // Set user display info
+                if (elements.userDisplayName) {
+                    elements.userDisplayName.textContent = user.name;
+                }
+                if (elements.userDisplayUsername) {
+                    elements.userDisplayUsername.textContent = '@' + (user.username || user.name.toLowerCase().replace(/\s+/g, '_'));
+                }
+                
+                // Store user in localStorage for persistence
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                
+                // Update admin panel visibility
+                updateAdminPanelVisibility();
+            } else {
+                elements.authButtons.classList.remove('hidden');
+                elements.userMenu.classList.add('hidden');
+                elements.createPostBtn.classList.add('hidden'); // Hide create post button
+                currentUser = null;
+                
+                // Remove user from localStorage
+                localStorage.removeItem('currentUser');
+                
+                // Update admin panel visibility
+                updateAdminPanelVisibility();
+            }
+        }
+
+        // Check for saved user on load
+        function checkSavedUser() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                try {
+                    const user = JSON.parse(savedUser);
+                    updateUIForUser(user);
+                    console.log('🔄 Restored user session:', user.name);
+                } catch (error) {
+                    console.error('❌ Error loading saved user:', error);
+                    localStorage.removeItem('currentUser');
+                }
+            }
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            console.log('🔐 Logging in...');
+            
+            const formData = new FormData(event.target);
+            
+            try {
+                const response = await apiRequest('/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        email: formData.get('email'),
+                        password: formData.get('password')
+                    })
+                });
+                
+                console.log('✅ Login successful');
+                updateUIForUser(response.user);
+                closeLoginModal();
+                showSuccessMessage('Başarıyla giriş yapıldı!');
+                
+                // Refresh posts to show admin controls
+                if (posts.length > 0) {
+                    console.log('🔄 Refreshing posts with admin controls...');
+                    elements.postsGrid.innerHTML = '';
+                    for (const post of posts) {
+                        await renderPost(post);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ Login failed:', error);
+                showErrorMessage('Giriş başarısız. E-posta veya şifre yanlış.');
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            console.log('📝 Registering...');
+            
+            const formData = new FormData(event.target);
+            const password = formData.get('password');
+            const passwordConfirm = formData.get('passwordConfirm');
+            const username = formData.get('username');
+            
+            // Şifre doğrulaması
+            if (password !== passwordConfirm) {
+                showErrorMessage('Şifreler eşleşmiyor. Lütfen aynı şifreyi girin.');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showErrorMessage('Şifre en az 6 karakter olmalıdır.');
+                return;
+            }
+            
+            // Username doğrulaması
+            if (username.length < 3) {
+                showErrorMessage('Kullanıcı adı en az 3 karakter olmalıdır.');
+                return;
+            }
+            
+            if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                showErrorMessage('Kullanıcı adı sadece harf, rakam ve alt çizgi içerebilir.');
+                return;
+            }
+            
+            try {
+                const response = await apiRequest('/auth/register', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        firstName: formData.get('firstName'),
+                        lastName: formData.get('lastName'),
+                        username: username,
+                        email: formData.get('email'),
+                        password: password
+                    })
+                });
+                
+                console.log('✅ Registration successful');
+                updateUIForUser(response.user);
+                closeRegisterModal();
+                showSuccessMessage('Hesap başarıyla oluşturuldu!');
+                
+            } catch (error) {
+                console.error('❌ Registration failed:', error);
+                showErrorMessage('Kayıt başarısız. Bu e-posta veya kullanıcı adı zaten kullanılıyor olabilir.');
+            }
+        }
+
+        async function handleLogout() {
+            console.log('🚪 Logging out...');
+            updateUIForUser(null);
+            showSuccessMessage('Başarıyla çıkış yapıldı!');
+            
+            // Refresh posts to hide admin controls
+            if (posts.length > 0) {
+                console.log('🔄 Refreshing posts without admin controls...');
+                elements.postsGrid.innerHTML = '';
+                for (const post of posts) {
+                    await renderPost(post);
+                }
+            }
+        }
+
+        // Modal functions
+        function openLoginModal() {
+            console.log('🔐 Opening login modal...');
+            elements.loginModal.classList.add('active');
+        }
+
+        function closeLoginModal() {
+            console.log('➖ Closing login modal...');
+            elements.loginModal.classList.remove('active');
+            elements.loginForm.reset();
+        }
+
+        function openRegisterModal() {
+            console.log('📝 Opening register modal...');
+            elements.registerModal.classList.add('active');
+        }
+
+        function closeRegisterModal() {
+            console.log('➖ Closing register modal...');
+            elements.registerModal.classList.remove('active');
+            elements.registerForm.reset();
+        }
+
+        // Category functions
+        function filterByCategory(category) {
+            console.log('🏷️ Filtering by category:', category);
+            
+            currentCategory = category;
+            currentPage = 1;
+            
+            // Ensure posts view is visible and admin pages are hidden
+            document.getElementById('posts-container').style.display = 'block';
+            document.getElementById('search-section').style.display = 'block';
+            document.getElementById('users-page').classList.remove('active');
+            
+            // Update active category - clear all categories first
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Set active category for regular navigation
+            const categoryElement = document.querySelector(`[data-category="${category}"]`);
+            if (categoryElement) {
+                categoryElement.classList.add('active');
+            }
+            
+            // Clear admin navigation active states
+            document.querySelectorAll('#admin-navigation-list .category-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Reload posts
+            loadPosts(1);
+        }
+
+        // Toast Notification System
+        function showToast(type, title, message, duration = 4000) {
+            console.log(`🍞 ${type.toUpperCase()}: ${title} - ${message}`);
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? 'fa-check' : type === 'error' ? 'fa-times' : 'fa-info';
+            
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <i class="fas ${icon}"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            elements.toastContainer.appendChild(toast);
+            
+            // Show toast with animation
+            setTimeout(() => toast.classList.add('show'), 100);
+            
+            // Auto remove
+            const autoRemove = setTimeout(() => removeToast(toast), duration);
+            
+            // Manual close
+            toast.querySelector('.toast-close').addEventListener('click', () => {
+                clearTimeout(autoRemove);
+                removeToast(toast);
+            });
+        }
+
+        function removeToast(toast) {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }
+
+        function showSuccessMessage(message) {
+            showToast('success', 'Başarılı!', message);
+        }
+
+        function showErrorMessage(message) {
+            showToast('error', 'Hata!', message);
+        }
+
+        function showInfoMessage(message) {
+            showToast('info', 'Bilgi', message);
+        }
+
+        // Search functions
+        async function performSearch(query) {
+            console.log('🔍 Searching for:', query);
+            
+            if (!query.trim()) {
+                elements.searchResults.classList.add('hidden');
+                return;
+            }
+            
+            try {
+                const response = await apiRequest(`/search?q=${encodeURIComponent(query)}&limit=5`);
+                
+                if (response.length > 0) {
+                    displaySearchResults(response);
+                } else {
+                    displayNoResults(query);
+                }
+                
+            } catch (error) {
+                console.error('❌ Search failed:', error);
+                showErrorMessage('Arama sırasında bir hata oluştu.');
+                elements.searchResults.classList.add('hidden');
+            }
+        }
+
+        function displaySearchResults(results) {
+            elements.searchResultsContainer.innerHTML = '';
+            
+            results.forEach(post => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'flex items-center space-x-3 p-3 hover:bg-[var(--hover-bg)] rounded-lg cursor-pointer transition-colors';
+                resultItem.onclick = () => {
+                    openPostDetail(post);
+                    elements.searchResults.classList.add('hidden');
+                    elements.searchInput.value = '';
+                };
+                
+                resultItem.innerHTML = `
+                    <div class="w-10 h-10 bg-gradient-to-r from-[var(--gradient-from)] to-[var(--gradient-to)] rounded-lg flex items-center justify-center text-white text-sm font-bold">
+                        ${post.author.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-[var(--text-color)] truncate">
+                            ${escapeHtml(post.title || post.content.substring(0, 50))}
+                        </div>
+                        <div class="text-xs text-[var(--secondary-text)]">
+                            ${post.author} • ${post.category || 'Genel'}
+                        </div>
+                    </div>
+                    <div class="text-xs text-[var(--secondary-text)]">
+                        ${formatDate(post.createdAt)}
+                    </div>
+                `;
+                
+                elements.searchResultsContainer.appendChild(resultItem);
+            });
+            
+            elements.searchResults.classList.remove('hidden');
+        }
+
+        function displayNoResults(query) {
+            elements.searchResultsContainer.innerHTML = `
+                <div class="text-center py-6 text-[var(--secondary-text)]">
+                    <i class="fas fa-search text-2xl mb-2"></i>
+                    <div class="text-sm">"${escapeHtml(query)}" için sonuç bulunamadı</div>
+                </div>
+            `;
+            elements.searchResults.classList.remove('hidden');
+        }
+
+        function toggleSidebar() {
+            console.log('📱 Toggling sidebar...');
+            elements.sidebar.classList.toggle('open');
+        }
+
+        // User dropdown functions
+        function toggleUserDropdown() {
+            console.log('👤 Toggling user dropdown...');
+            elements.userDropdownMenu.classList.toggle('show');
+            elements.userMenu.classList.toggle('show');
+        }
+
+        function closeUserDropdown() {
+            elements.userDropdownMenu.classList.remove('show');
+            elements.userMenu.classList.remove('show');
+        }
+
+        // Profile modal functions
+        function openProfileModal() {
+            console.log('👤 Opening profile modal...');
+            
+            // Populate current user data
+            if (currentUser) {
+                document.getElementById('profile-firstname').value = currentUser.firstName || '';
+                document.getElementById('profile-lastname').value = currentUser.lastName || '';
+                document.getElementById('profile-email').value = currentUser.email || '';
+                document.getElementById('profile-bio').value = currentUser.bio || '';
+            }
+            
+            elements.profileModal.classList.add('active');
+            closeUserDropdown();
+        }
+
+        function closeProfileModal() {
+            console.log('➖ Closing profile modal...');
+            elements.profileModal.classList.remove('active');
+            elements.profileForm.reset();
+        }
+
+        async function handleProfileUpdate(event) {
+            event.preventDefault();
+            console.log('💾 Updating profile...');
+            
+            const formData = new FormData(event.target);
+            
+            try {
+                const response = await apiRequest(`/auth/profile/${currentUser.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        firstName: formData.get('firstName'),
+                        lastName: formData.get('lastName'),
+                        bio: formData.get('bio')
+                    })
+                });
+                
+                console.log('✅ Profile updated');
+                
+                // Update current user data
+                currentUser.name = response.name;
+                currentUser.firstName = response.firstName;
+                currentUser.lastName = response.lastName;
+                currentUser.bio = response.bio;
+                updateUIForUser(currentUser);
+                
+                closeProfileModal();
+                showSuccessMessage('Profil başarıyla güncellendi!');
+                
+            } catch (error) {
+                console.error('❌ Profile update failed:', error);
+                showErrorMessage('Profil güncellenirken hata oluştu.');
+            }
+        }
+
+        // My posts functions
+        async function openMyPostsModal() {
+            console.log('📝 Opening my posts modal...');
+            
+            elements.myPostsModal.classList.add('active');
+            closeUserDropdown();
+            
+            await loadMyPosts();
+        }
+
+        function closeMyPostsModal() {
+            console.log('➖ Closing my posts modal...');
+            elements.myPostsModal.classList.remove('active');
+        }
+
+        async function loadMyPosts() {
+            console.log('📄 Loading my posts...');
+            
+            if (!currentUser) return;
+            
+            try {
+                // Get posts by current user
+                const response = await apiRequest(`/posts?author=${encodeURIComponent(currentUser.name)}`);
+                
+                if (response.posts && response.posts.length > 0) {
+                    elements.myPostsEmpty.classList.add('hidden');
+                    elements.myPostsGrid.classList.remove('hidden');
+                    renderMyPosts(response.posts);
+                } else {
+                    elements.myPostsEmpty.classList.remove('hidden');
+                    elements.myPostsGrid.classList.add('hidden');
+                }
+                
+            } catch (error) {
+                console.error('❌ Failed to load my posts:', error);
+                showErrorMessage('Gönderiler yüklenirken hata oluştu.');
+            }
+        }
+
+        function renderMyPosts(posts) {
+            elements.myPostsGrid.innerHTML = '';
+            
+            posts.forEach(post => {
+                const postEl = document.createElement('div');
+                postEl.className = 'my-post-card';
+                
+                postEl.innerHTML = `
+                    <div class="my-post-actions">
+                        <button class="my-post-btn view" onclick="event.stopPropagation(); viewMyPost('${post._id}')" title="Detayı Gör">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="my-post-btn edit" onclick="event.stopPropagation(); editMyPost('${post._id}')" title="Düzenle">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="my-post-btn delete" onclick="event.stopPropagation(); deleteMyPost('${post._id}')" title="Sil">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="my-post-title">${escapeHtml(post.title || post.content.substring(0, 50) + '...')}</div>
+                    <div class="my-post-content">${escapeHtml(post.content)}</div>
+                    
+                    <div class="my-post-meta">
+                        <div class="flex items-center gap-2">
+                            <span class="my-post-category">${post.category || 'Genel'}</span>
+                            <span>${formatDate(post.createdAt)}</span>
+                        </div>
+                        <div class="my-post-stats">
+                            <span title="Beğeni">
+                                <i class="fas fa-heart text-red-500"></i>
+                                ${post.likes || 0}
+                            </span>
+                            <span title="Yorum">
+                                <i class="fas fa-comment text-blue-500"></i>
+                                ${post.comments?.length || 0}
+                            </span>
+                        </div>
+                    </div>
+                `;
+                
+                // Removed direct click handler to prevent modal behind modal
+                
+                elements.myPostsGrid.appendChild(postEl);
+            });
+        }
+
+        // My Posts Management Functions
+        function editMyPost(postId) {
+            const post = posts.find(p => p._id === postId);
+            if (!post) {
+                showErrorMessage('Gönderi bulunamadı.');
+                return;
+            }
+
+            // Fill the dedicated edit form
+            document.getElementById('edit-post-id').value = post._id;
+            document.getElementById('edit-post-title').value = post.title || '';
+            document.getElementById('edit-post-content').value = post.content || '';
+            document.getElementById('edit-post-category').value = post.category || '';
+            document.getElementById('edit-post-url').value = post.sourceUrl || post.videoUrl || '';
+            
+            // Show/hide remove image option based on existing image
+            const removeImageCheckbox = document.getElementById('remove-current-image');
+            if (post.imageUrl) {
+                removeImageCheckbox.parentElement.parentElement.style.display = 'block';
+                removeImageCheckbox.checked = false; // Reset checkbox
+            } else {
+                removeImageCheckbox.parentElement.parentElement.style.display = 'none';
+            }
+            
+            // Close my posts modal and open dedicated edit modal
+            elements.myPostsModal.classList.remove('active');
+            elements.editPostModal.classList.add('active');
+        }
+
+        function viewMyPost(postId) {
+            const post = posts.find(p => p._id === postId);
+            if (!post) {
+                showErrorMessage('Gönderi bulunamadı.');
+                return;
+            }
+
+            // Close my posts modal first
+            elements.myPostsModal.classList.remove('active');
+            
+            // Then open post detail modal
+            setTimeout(() => {
+                openPostDetail(post);
+            }, 300); // Wait for my posts modal to close
+        }
+
+        async function deleteMyPost(postId) {
+            if (!confirm('Bu gönderiyi silmek istediğinizden emin misiniz?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts/${postId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showSuccessMessage('Gönderi başarıyla silindi.');
+                    
+                    // Remove from posts array
+                    posts = posts.filter(post => post._id !== postId);
+                    
+                    // Refresh my posts modal
+                    await loadMyPosts();
+                    
+                    // Refresh main grid if it's visible
+                    if (posts.length > 0) {
+                        elements.postsGrid.innerHTML = '';
+                        for (const post of posts) {
+                            await renderPost(post);
+                        }
+                    }
+                } else {
+                    const error = await response.json();
+                    showErrorMessage(error.message || 'Gönderi silinirken hata oluştu.');
+                }
+            } catch (error) {
+                console.error('❌ Delete error:', error);
+                showErrorMessage('Gönderi silinirken hata oluştu.');
+            }
+        }
+
+        // Edit post functions
+        function openEditPostModal(post) {
+            console.log('✏️ Opening edit modal for post:', post._id);
+            
+            // Populate form with post data
+            document.getElementById('edit-post-id').value = post._id;
+            document.getElementById('edit-post-title').value = post.title || '';
+            document.getElementById('edit-post-content').value = post.content || '';
+            document.getElementById('edit-post-category').value = post.category || '';
+            document.getElementById('edit-post-url').value = post.sourceUrl || post.videoUrl || '';
+            
+            elements.editPostModal.classList.add('active');
+        }
+
+        function closeEditPostModal() {
+            console.log('➖ Closing edit post modal...');
+            elements.editPostModal.classList.remove('active');
+            elements.editPostForm.reset();
+            
+            // Hide remove image option when closing
+            const removeImageCheckbox = document.getElementById('remove-current-image');
+            if (removeImageCheckbox) {
+                removeImageCheckbox.parentElement.parentElement.style.display = 'none';
+                removeImageCheckbox.checked = false;
+            }
+        }
+
+        async function handleEditPost(event) {
+            event.preventDefault();
+            console.log('💾 Updating post...');
+            
+            const formData = new FormData(event.target);
+            const postId = formData.get('postId');
+            
+            // Add author field for backend validation
+            formData.append('author', currentUser ? currentUser.name : 'Anonim');
+            
+            try {
+                // Use fetch directly instead of apiRequest to send FormData
+                const response = await fetch(`${API_BASE_URL}/posts/${postId}`, {
+                    method: 'PUT',
+                    body: formData // Send FormData directly (supports file uploads)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('✅ Post updated:', result.title);
+                closeEditPostModal();
+                showSuccessMessage('Gönderi başarıyla güncellendi!');
+                
+                // Refresh my posts
+                await loadMyPosts();
+                
+                // Refresh main posts if needed
+                await loadPosts(1);
+                
+            } catch (error) {
+                console.error('❌ Post update failed:', error);
+                showErrorMessage('Gönderi güncellenirken hata oluştu.');
+            }
+        }
+
+        async function handleDeletePost() {
+            const postId = document.getElementById('edit-post-id').value;
+            
+            if (!confirm('Bu gönderiyi silmek istediğinizden emin misiniz?')) {
+                return;
+            }
+            
+            console.log('🗑️ Deleting post:', postId);
+            
+            try {
+                await apiRequest(`/posts/${postId}`, {
+                    method: 'DELETE'
+                });
+                
+                console.log('✅ Post deleted');
+                closeEditPostModal();
+                showSuccessMessage('Gönderi başarıyla silindi!');
+                
+                // Refresh my posts
+                await loadMyPosts();
+                
+                // Refresh main posts
+                await loadPosts(1);
+                
+            } catch (error) {
+                console.error('❌ Post delete failed:', error);
+                showErrorMessage('Gönderi silinirken hata oluştu.');
+            }
+        }
+
+        // Post functions
+        async function loadPosts(page = 1) {
+            if (isLoading) return;
+            
+            console.log(`📄 Loading posts page ${page}...`);
+            
+            isLoading = true;
+            elements.loading.classList.remove('hidden');
+            
+            try {
+                let url = `/posts?page=${page}&limit=8`;
+                if (currentCategory) {
+                    url += `&category=${encodeURIComponent(currentCategory)}`;
+                }
+                
+                const response = await apiRequest(url);
+                
+                if (page === 1) {
+                    elements.postsGrid.innerHTML = '';
+                    posts = [];
+                }
+                
+                if (response.posts && response.posts.length > 0) {
+                    // Render posts asynchronously
+                    for (const post of response.posts) {
+                        posts.push(post);
+                        await renderPost(post);
+                    }
+                    
+                    currentPage = page;
+                    hasMorePosts = response.pagination.hasMore;
+                    
+                    // Update total posts count
+                    if (elements.totalPosts) {
+                        elements.totalPosts.textContent = response.pagination.totalPosts;
+                    }
+                    
+                    // Update load more button
+                    if (hasMorePosts) {
+                        elements.loadMoreBtn.classList.remove('hidden');
+                        elements.noMorePosts.classList.add('hidden');
+                    } else {
+                        elements.loadMoreBtn.classList.add('hidden');
+                        elements.noMorePosts.classList.remove('hidden');
+                    }
+                    
+                    console.log(`✅ Loaded ${response.posts.length} posts`);
+                } else {
+                    hasMorePosts = false;
+                    elements.loadMoreBtn.classList.add('hidden');
+                    elements.noMorePosts.classList.remove('hidden');
+                    console.log('📄 No more posts');
+                }
+                
+            } catch (error) {
+                console.error('❌ Failed to load posts:', error);
+                // Show demo content on error
+                if (page === 1) {
+                    showDemoContent();
+                }
+            } finally {
+                isLoading = false;
+                elements.loading.classList.add('hidden');
+            }
+        }
+
+        async function renderPost(post) {
+            const postEl = document.createElement('div');
+            postEl.className = 'post-card';
+            postEl.onclick = () => openPostDetail(post);
+            
+            // Image or placeholder with priority: uploaded image > video/link thumbnail > category icon
+            let mediaHtml = '';
+            
+            if (post.imageUrl) {
+                // Uploaded image has highest priority
+                mediaHtml = `<img src="http://localhost:3000${post.imageUrl}" alt="Post image" class="post-image">`;
+            } else if (post.videoUrl || post.sourceUrl) {
+                // Check for thumbnail (YouTube immediate, others via metadata)
+                const thumbnailUrl = await getThumbnailUrl(post.videoUrl || post.sourceUrl);
+                const url = post.videoUrl || post.sourceUrl;
+                
+                if (thumbnailUrl) {
+                    const isYoutube = url.includes('youtube') || url.includes('youtu.be');
+                    const isVideo = isYoutube || url.includes('vimeo') || url.includes('video');
+                    
+                    mediaHtml = `
+                        <div class="post-image-container relative">
+                            <img src="${thumbnailUrl}" alt="${isVideo ? 'Video' : 'Article'} thumbnail" class="post-image">
+                            ${isVideo ? `
+                                <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 hover:bg-opacity-40 transition-all duration-200">
+                                    <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                                        <i class="fas fa-play text-white text-sm ml-0.5"></i>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            <div class="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs font-medium">
+                                ${isYoutube ? 'YouTube' : isVideo ? 'Video' : 'Article'}
+                            </div>
+                        </div>`;
+                } else {
+                    // Fallback to category icon for URLs without thumbnails
+                    const icons = {
+                        'Teknoloji': 'fa-microchip',
+                        'Eğitim': 'fa-graduation-cap',
+                        'Kariyer': 'fa-briefcase',
+                        'Bilim': 'fa-flask',
+                        'Sanat & Tasarım': 'fa-palette',
+                        'Yaşam': 'fa-heart',
+                        'Girişimcilik': 'fa-rocket',
+                        'Seyahat': 'fa-plane'
+                    };
+                    const icon = icons[post.category] || 'fa-link';
+                    mediaHtml = `
+                        <div class="post-placeholder">
+                            <i class="fas ${icon}"></i>
+                            <div class="absolute bottom-2 right-2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium">
+                                Link
+                            </div>
+                        </div>`;
+                }
+            } else {
+                // Default category icon
+                const icons = {
+                    'Teknoloji': 'fa-microchip',
+                    'Eğitim': 'fa-graduation-cap',
+                    'Kariyer': 'fa-briefcase',
+                    'Bilim': 'fa-flask',
+                    'Sanat & Tasarım': 'fa-palette',
+                    'Yaşam': 'fa-heart',
+                    'Girişimcilik': 'fa-rocket',
+                    'Seyahat': 'fa-plane'
+                };
+                const icon = icons[post.category] || 'fa-file-text';
+                mediaHtml = `<div class="post-placeholder"><i class="fas ${icon}"></i></div>`;
+            }
+            
+            postEl.innerHTML = `
+                ${isAdmin() ? `
+                    <div class="admin-controls">
+                        <button class="admin-btn edit" onclick="event.stopPropagation(); editAdminPost('${post._id}')" title="Düzenle">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="admin-btn delete" onclick="event.stopPropagation(); deleteAdminPost('${post._id}')" title="Sil">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                ` : ''}
+                <div class="post-content">
+                    <h3 class="post-title">${escapeHtml(post.title || post.content)}</h3>
+                    ${post.title ? `<p class="post-description">${escapeHtml(post.content)}</p>` : ''}
+                    <div class="post-meta">
+                        <span class="text-sm text-[var(--secondary-text)]">${post.author || 'Anonim'}</span>
+                        <span class="text-sm text-[var(--secondary-text)]">${formatDate(post.createdAt)}</span>
+                    </div>
+                </div>
+                ${mediaHtml}
+            `;
+            
+            elements.postsGrid.appendChild(postEl);
+        }
+
+        async function showDemoContent() {
+            console.log('📝 Showing demo content...');
+            
+            const demoPost = {
+                title: 'Demo Gönderi',
+                content: 'Bu bir demo gönderidir. Backend bağlantısı kurulamadı.',
+                author: 'Demo User',
+                category: 'Frontend',
+                createdAt: new Date().toISOString()
+            };
+            
+            await renderPost(demoPost);
+        }
+
+        // Modal drag protection system
+        let modalDragState = {
+            isDragging: false,
+            startX: 0,
+            startY: 0,
+            threshold: 5 // pixels
+        };
+
+        function setupModalDragProtection(modal) {
+            modal.addEventListener('mousedown', (e) => {
+                if (e.target === modal) {
+                    modalDragState.isDragging = false;
+                    modalDragState.startX = e.clientX;
+                    modalDragState.startY = e.clientY;
+                }
+            });
+
+            modal.addEventListener('mousemove', (e) => {
+                if (!modalDragState.isDragging) {
+                    const deltaX = Math.abs(e.clientX - modalDragState.startX);
+                    const deltaY = Math.abs(e.clientY - modalDragState.startY);
+                    
+                    if (deltaX > modalDragState.threshold || deltaY > modalDragState.threshold) {
+                        modalDragState.isDragging = true;
+                    }
+                }
+            });
+
+            modal.addEventListener('mouseup', (e) => {
+                if (e.target === modal && !modalDragState.isDragging) {
+                    // Only close if it wasn't a drag operation
+                    const modalId = modal.id;
+                    switch(modalId) {
+                        case 'create-modal':
+                            closeCreateModal();
+                            break;
+                        case 'post-detail-modal':
+                            closePostDetail();
+                            break;
+                        case 'login-modal':
+                            closeLoginModal();
+                            break;
+                        case 'register-modal':
+                            closeRegisterModal();
+                            break;
+                        case 'profile-modal':
+                            closeProfileModal();
+                            break;
+                        case 'my-posts-modal':
+                            closeMyPostsModal();
+                            break;
+                        case 'edit-post-modal':
+                            closeEditPostModal();
+                            break;
+                    }
+                }
+                modalDragState.isDragging = false;
+            });
+        }
+
+        // Modal functions
+        function openCreateModal() {
+            console.log('➕ Opening create modal...');
+            elements.createModal.classList.add('active');
+        }
+
+        function closeCreateModal() {
+            console.log('➖ Closing create modal...');
+            
+            // Reset edit mode
+            editingPost = null;
+            
+            // Reset modal UI to create mode
+            document.getElementById('modal-title').textContent = 'Yeni Gönderi Oluştur';
+            document.getElementById('submit-btn').textContent = 'Yayınla';
+            
+            // Hide remove image option when closing
+            const removeImageOption = document.getElementById('remove-image-option');
+            const removeImageCheckbox = document.getElementById('remove-image-main');
+            if (removeImageOption && removeImageCheckbox) {
+                removeImageOption.style.display = 'none';
+                removeImageCheckbox.checked = false;
+            }
+            
+            elements.createModal.classList.remove('active');
+            elements.createForm.reset();
+        }
+
+        // YouTube thumbnail extraction function
+        function getYouTubeThumbnail(url) {
+            if (!url) return null;
+            
+            // Extract video ID from various YouTube URL formats
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            
+            if (match && match[2].length === 11) {
+                const videoId = match[2];
+                // Return high quality thumbnail URL
+                return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+            }
+            
+            return null;
+        }
+
+        // URL metadata cache
+        const urlMetadataCache = new Map();
+
+        // Fetch URL metadata from backend
+        async function fetchUrlMetadata(url) {
+            if (!url) return null;
+            
+            // Check cache first
+            if (urlMetadataCache.has(url)) {
+                return urlMetadataCache.get(url);
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/url-metadata`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url })
+                });
+                
+                if (response.ok) {
+                    const metadata = await response.json();
+                    // Cache the result
+                    urlMetadataCache.set(url, metadata);
+                    return metadata;
+                }
+            } catch (error) {
+                console.warn('URL metadata fetch failed:', error);
+            }
+            
+            // Cache null result to avoid repeated requests
+            urlMetadataCache.set(url, null);
+            return null;
+        }
+
+        // General URL thumbnail extraction (YouTube + web metadata)
+        function getVideoThumbnail(url) {
+            if (!url) return null;
+            
+            // Check for YouTube first (immediate result)
+            const youtubeThumbnail = getYouTubeThumbnail(url);
+            if (youtubeThumbnail) return youtubeThumbnail;
+            
+            // For other URLs, return null (will be handled by metadata fetch)
+            return null;
+        }
+
+        // Enhanced function that also checks for web metadata
+        async function getThumbnailUrl(url) {
+            if (!url) return null;
+            
+            // YouTube has priority (immediate result)
+            const youtubeThumbnail = getYouTubeThumbnail(url);
+            if (youtubeThumbnail) return youtubeThumbnail;
+            
+            // For other URLs, try to fetch metadata
+            const metadata = await fetchUrlMetadata(url);
+            return metadata?.image || null;
+        }
+
+        async function openPostDetail(post) {
+            console.log('🔍 Opening post detail:', post.title);
+            
+            const detailContent = document.getElementById('detail-content');
+            const detailSidebar = document.getElementById('detail-sidebar');
+            
+            // Main content area
+            let mediaHtml = '';
+            
+            // Priority: uploaded image > video/link thumbnail > no media
+            if (post.imageUrl) {
+                mediaHtml = `
+                    <div class="post-detail-media mb-6">
+                        <img src="http://localhost:3000${post.imageUrl}" alt="Post image" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md">
+                    </div>`;
+            } else if (post.videoUrl || post.sourceUrl) {
+                const thumbnailUrl = await getThumbnailUrl(post.videoUrl || post.sourceUrl);
+                const url = post.videoUrl || post.sourceUrl;
+                
+                if (thumbnailUrl) {
+                    const isYoutube = url.includes('youtube') || url.includes('youtu.be');
+                    const isVideo = isYoutube || url.includes('vimeo') || url.includes('video');
+                    mediaHtml = `
+                        <div class="post-detail-media mb-6">
+                            <div class="relative group cursor-pointer" onclick="window.open('${url}', '_blank')">
+                                <img src="${thumbnailUrl}" alt="${isVideo ? 'Video' : 'Article'} thumbnail" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md">
+                                ${isVideo ? `
+                                    <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg">
+                                        <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                            <i class="fas fa-play text-white text-xl ml-1"></i>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                <div class="absolute bottom-4 right-4 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs font-medium">
+                                    ${isYoutube ? 'YouTube' : isVideo ? 'Video' : 'Article'}
+                                </div>
+                            </div>
+                        </div>`;
+                } else {
+                    // For non-video URLs, show a simple preview card
+                    mediaHtml = `
+                        <div class="post-detail-media mb-6">
+                            <div class="border border-[var(--border-color)] rounded-lg p-4 bg-[var(--hover-bg)] cursor-pointer hover:bg-[var(--border-color)] transition-colors" onclick="window.open('${post.sourceUrl || post.videoUrl}', '_blank')">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-[var(--gradient-from)] to-[var(--gradient-to)] rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-external-link-alt text-white"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-[var(--text-color)]">Kaynak Makale</p>
+                                        <p class="text-sm text-[var(--secondary-text)] truncate">${post.sourceUrl || post.videoUrl}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+            }
+            
+            detailContent.innerHTML = `
+                <div class="post-detail-header">
+                    <h1 class="post-detail-title">${escapeHtml(post.title || post.content)}</h1>
+                    <div class="post-detail-meta">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-8 h-8 bg-gradient-to-br from-[var(--gradient-from)] to-[var(--gradient-to)] rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                ${post.author ? post.author.charAt(0).toUpperCase() : 'A'}
+                            </div>
+                            <span class="font-medium">${escapeHtml(post.author || 'Anonim')}</span>
+                        </div>
+                        <span class="text-[var(--secondary-text)]">•</span>
+                        <span>${formatDate(post.createdAt)}</span>
+                        ${post.category ? `<span class="text-[var(--secondary-text)]">•</span><span class="px-2 py-1 bg-[var(--accent-color)] text-white rounded-full text-xs font-medium">${post.category}</span>` : ''}
+                    </div>
+                </div>
+                
+                ${post.title ? `<div class="post-detail-content">${escapeHtml(post.content)}</div>` : ''}
+                
+                ${mediaHtml}
+            `;
+            
+            // Sidebar content
+            detailSidebar.innerHTML = `
+                <div class="post-detail-sidebar">
+                    <!-- Actions Section -->
+                    <div class="sidebar-section">
+                        <h3>Eylemler</h3>
+                        <div class="space-y-3">
+                            ${post.sourceUrl || post.videoUrl ? `
+                                <a href="${post.sourceUrl || post.videoUrl}" target="_blank" class="flex items-center space-x-3 p-3 bg-[var(--accent-color)] text-white rounded-lg hover:bg-[var(--accent-hover)] transition-colors">
+                                    <i class="fas ${post.videoUrl ? 'fa-play' : 'fa-external-link-alt'} text-sm"></i>
+                                    <span class="font-medium">${post.videoUrl ? 'Videoyu İzle' : 'Kaynak Makaleyi Oku'}</span>
+                                </a>
+                            ` : ''}
+                            
+                            <button class="flex items-center space-x-3 p-3 border border-[var(--border-color)] rounded-lg hover:bg-[var(--hover-bg)] transition-colors w-full">
+                                <i class="fas fa-heart text-red-500"></i>
+                                <span class="font-medium">${post.likes || 0} Beğeni</span>
+                            </button>
+                            
+                            <div class="share-dropdown">
+                                <button class="flex items-center space-x-3 p-3 border border-[var(--border-color)] rounded-lg hover:bg-[var(--hover-bg)] transition-colors w-full" onclick="toggleShareMenu(event)">
+                                    <i class="fas fa-share text-blue-500"></i>
+                                    <span class="font-medium">Paylaş</span>
+                                    <i class="fas fa-chevron-up text-xs text-[var(--secondary-text)] ml-auto"></i>
+                                </button>
+                                
+                                <div class="share-menu" id="share-menu">
+                                    <a href="#" class="share-option share-x" onclick="shareToX('${escapeHtml(post.title || post.content)}', '${window.location.origin}')">
+                                        <i class="fab fa-x-twitter"></i>
+                                        <span>X'te Paylaş</span>
+                                    </a>
+                                    
+                                    <a href="#" class="share-option share-whatsapp" onclick="shareToWhatsApp('${escapeHtml(post.title || post.content)}', '${window.location.origin}')">
+                                        <i class="fab fa-whatsapp"></i>
+                                        <span>WhatsApp'ta Paylaş</span>
+                                    </a>
+                                    
+                                    <a href="#" class="share-option share-telegram" onclick="shareToTelegram('${escapeHtml(post.title || post.content)}', '${window.location.origin}')">
+                                        <i class="fab fa-telegram"></i>
+                                        <span>Telegram'da Paylaş</span>
+                                    </a>
+                                    
+                                    <a href="#" class="share-option share-linkedin" onclick="shareToLinkedIn('${escapeHtml(post.title || post.content)}', '${window.location.origin}')">
+                                        <i class="fab fa-linkedin"></i>
+                                        <span>LinkedIn'de Paylaş</span>
+                                    </a>
+                                    
+                                    <a href="#" class="share-option share-copy" onclick="copyToClipboard('${window.location.origin}', '${escapeHtml(post.title || post.content)}')">
+                                        <i class="fas fa-copy"></i>
+                                        <span>Bağlantıyı Kopyala</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Meta Information -->
+                    <div class="sidebar-section">
+                        <h3>Bilgiler</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-[var(--secondary-text)]">Yayın Tarihi:</span>
+                                <span class="font-medium">${formatDate(post.createdAt)}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-[var(--secondary-text)]">Kategori:</span>
+                                <span class="font-medium">${post.category || 'Genel'}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-[var(--secondary-text)]">Beğeni:</span>
+                                <span class="font-medium">${post.likes || 0}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-[var(--secondary-text)]">Yorum:</span>
+                                <span class="font-medium">${post.comments?.length || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tags Section -->
+                    ${post.tags && post.tags.length > 0 ? `
+                        <div class="sidebar-section">
+                            <h3>Etiketler</h3>
+                            <div class="flex flex-wrap gap-2">
+                                ${post.tags.map(tag => `
+                                    <span class="px-3 py-1 bg-[var(--hover-bg)] text-[var(--text-color)] rounded-full text-xs font-medium border border-[var(--border-color)]">
+                                        #${tag}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            elements.detailModal.classList.add('active');
+        }
+
+        function closePostDetail() {
+            console.log('➖ Closing post detail...');
+            elements.detailModal.classList.remove('active');
+            // Close share menu if open
+            const shareMenu = document.getElementById('share-menu');
+            if (shareMenu) {
+                shareMenu.classList.remove('active');
+            }
+        }
+
+        // Share Functions
+        function toggleShareMenu(event) {
+            event.stopPropagation();
+            const shareMenu = document.getElementById('share-menu');
+            shareMenu.classList.toggle('active');
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', function closeMenu(e) {
+                if (!shareMenu.contains(e.target) && !e.target.closest('.share-dropdown')) {
+                    shareMenu.classList.remove('active');
+                    document.removeEventListener('click', closeMenu);
+                }
+            });
+        }
+
+        function shareToX(title, url) {
+            const text = encodeURIComponent(`${title} - DailyLoop'ta keşfet!`);
+            const shareUrl = encodeURIComponent(url);
+            window.open(`https://twitter.com/intent/tweet?text=${text}&url=${shareUrl}`, '_blank', 'width=600,height=400');
+        }
+
+        function shareToWhatsApp(title, url) {
+            const text = encodeURIComponent(`*${title}*\n\nDailyLoop'ta keşfet: ${url}`);
+            window.open(`https://wa.me/?text=${text}`, '_blank');
+        }
+
+        function shareToTelegram(title, url) {
+            const text = encodeURIComponent(`${title}\n\nDailyLoop'ta keşfet:`);
+            const shareUrl = encodeURIComponent(url);
+            window.open(`https://t.me/share/url?url=${shareUrl}&text=${text}`, '_blank');
+        }
+
+        function shareToLinkedIn(title, url) {
+            const shareUrl = encodeURIComponent(url);
+            const summary = encodeURIComponent(`${title} - DailyLoop'ta keşfedilen harika içerik!`);
+            window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}&summary=${summary}`, '_blank', 'width=600,height=600');
+        }
+
+        async function copyToClipboard(url, title) {
+            try {
+                await navigator.clipboard.writeText(url);
+                showSuccessMessage('Bağlantı panoya kopyalandı!');
+                
+                // Close share menu
+                const shareMenu = document.getElementById('share-menu');
+                if (shareMenu) {
+                    shareMenu.classList.remove('active');
+                }
+            } catch (err) {
+                console.error('Clipboard copy failed:', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showSuccessMessage('Bağlantı panoya kopyalandı!');
+            }
+        }
+
+        // Form handling
+        async function handleCreatePost(event) {
+            event.preventDefault();
+            
+            if (!currentUser) {
+                showErrorMessage('Gönderi paylaşmak için giriş yapmalısınız.');
+                return;
+            }
+            
+            const formData = new FormData(event.target);
+            
+            if (editingPost) {
+                // Edit mode - admin updating existing post
+                console.log('✏️ Updating post...', editingPost._id);
+                
+                try {
+                    // Add userId for admin authentication
+                    formData.append('userId', currentUser.id);
+                    formData.append('sourceUrl', formData.get('postUrl'));
+                    formData.append('videoUrl', formData.get('postUrl'));
+                    
+                    const response = await fetch(`${API_BASE_URL}/admin/posts/${editingPost._id}`, {
+                        method: 'PUT',
+                        body: formData // Send FormData directly (supports file uploads)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('✅ Post updated:', result.post.title);
+                    
+                    // Update in UI
+                    const postIndex = posts.findIndex(p => p._id === editingPost._id);
+                    if (postIndex !== -1) {
+                        posts[postIndex] = result.post;
+                        elements.postsGrid.innerHTML = '';
+                        for (const post of posts) {
+                            await renderPost(post);
+                        }
+                    }
+                    
+                    showSuccessMessage('Gönderi başarıyla güncellendi!');
+                    closeCreateModal();
+                    
+                } catch (error) {
+                    console.error('❌ Failed to update post:', error);
+                    showErrorMessage('Gönderi güncellenirken hata oluştu.');
+                }
+            } else {
+                // Create mode - new post
+                console.log('💾 Creating post...');
+                
+                formData.append('author', currentUser.name);
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/posts`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const newPost = await response.json();
+                    console.log('✅ Post created:', newPost.title);
+                    
+                    // Add to beginning of posts
+                    posts.unshift(newPost);
+                    elements.postsGrid.innerHTML = '';
+                    for (const post of posts) {
+                        await renderPost(post);
+                    }
+                    
+                    showSuccessMessage('Gönderi başarıyla oluşturuldu!');
+                    closeCreateModal();
+                    
+                } catch (error) {
+                    console.error('❌ Failed to create post:', error);
+                    showErrorMessage('Gönderi oluşturulamadı. Lütfen tekrar deneyin.');
+                }
+            }
+        }
+
+        // Utility functions
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(dateString) {
+            try {
+                return new Date(dateString).toLocaleDateString('tr-TR');
+            } catch {
+                return 'Bilinmiyor';
+            }
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            console.log('🔗 Setting up event listeners...');
+            
+            // Theme toggle
+            elements.themeToggle.addEventListener('click', toggleTheme);
+            
+            // Sidebar toggle
+            if (elements.sidebarToggle) {
+                elements.sidebarToggle.addEventListener('click', toggleSidebar);
+            }
+            
+            // Auth buttons
+            elements.loginBtn.addEventListener('click', openLoginModal);
+            elements.registerBtn.addEventListener('click', openRegisterModal);
+            elements.logoutBtn.addEventListener('click', handleLogout);
+            
+            // User dropdown
+            elements.userToggle.addEventListener('click', toggleUserDropdown);
+            elements.profileBtn.addEventListener('click', openProfileModal);
+            elements.myPostsBtn.addEventListener('click', openMyPostsModal);
+            elements.settingsBtn.addEventListener('click', () => {
+                showInfoMessage('Ayarlar sayfası yakında aktif olacak!');
+                closeUserDropdown();
+            });
+            
+            // Login modal
+            elements.closeLoginModal.addEventListener('click', closeLoginModal);
+            elements.cancelLogin.addEventListener('click', closeLoginModal);
+            elements.switchToRegister.addEventListener('click', () => {
+                closeLoginModal();
+                openRegisterModal();
+            });
+            elements.loginForm.addEventListener('submit', handleLogin);
+            
+            // Register modal
+            elements.closeRegisterModal.addEventListener('click', closeRegisterModal);
+            elements.cancelRegister.addEventListener('click', closeRegisterModal);
+            elements.switchToLogin.addEventListener('click', () => {
+                closeRegisterModal();
+                openLoginModal();
+            });
+            elements.registerForm.addEventListener('submit', handleRegister);
+            
+            // Create post modal (only if user is logged in)
+            if (elements.createPostBtn) {
+                elements.createPostBtn.addEventListener('click', () => {
+                    if (currentUser) {
+                        openCreateModal();
+                    } else {
+                        showErrorMessage('Gönderi paylaşmak için giriş yapmalısınız.');
+                        openLoginModal();
+                    }
+                });
+            }
+            
+            // Search functionality
+            elements.searchBtn.addEventListener('click', () => {
+                const query = elements.searchInput.value.trim();
+                performSearch(query);
+            });
+            
+            elements.searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const query = elements.searchInput.value.trim();
+                    performSearch(query);
+                }
+            });
+            
+            // Hide search results when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!elements.searchSection.contains(e.target)) {
+                    elements.searchResults.classList.add('hidden');
+                }
+            });
+            
+            // OAuth login buttons (placeholder for now)
+            document.getElementById('login-github')?.addEventListener('click', () => {
+                showInfoMessage('GitHub girişi yakında aktif olacak!');
+            });
+            
+            document.getElementById('login-google')?.addEventListener('click', () => {
+                showInfoMessage('Google girişi yakında aktif olacak!');
+            });
+            
+            document.getElementById('register-github')?.addEventListener('click', () => {
+                showInfoMessage('GitHub ile kayıt yakında aktif olacak!');
+            });
+            
+            document.getElementById('register-google')?.addEventListener('click', () => {
+                showInfoMessage('Google ile kayıt yakında aktif olacak!');
+            });
+            elements.closeModal.addEventListener('click', closeCreateModal);
+            elements.cancelPost.addEventListener('click', closeCreateModal);
+            
+            // Post detail modal
+            elements.closeDetailModal.addEventListener('click', closePostDetail);
+            
+            // Form submission
+            elements.createForm.addEventListener('submit', handleCreatePost);
+            
+            // Load more
+            elements.loadMoreBtn.addEventListener('click', () => {
+                loadPosts(currentPage + 1);
+            });
+            
+            // Category filtering
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const category = item.getAttribute('data-category');
+                    filterByCategory(category);
+                });
+            });
+            
+            // Setup modal drag protection for all modals
+            setupModalDragProtection(elements.createModal);
+            setupModalDragProtection(elements.detailModal);
+            setupModalDragProtection(elements.loginModal);
+            setupModalDragProtection(elements.registerModal);
+            setupModalDragProtection(elements.profileModal);
+            setupModalDragProtection(elements.myPostsModal);
+            setupModalDragProtection(elements.editPostModal);
+            
+            // Profile modal
+            elements.closeProfileModal.addEventListener('click', closeProfileModal);
+            elements.cancelProfile.addEventListener('click', closeProfileModal);
+            elements.profileForm.addEventListener('submit', handleProfileUpdate);
+            
+            // My posts modal
+            elements.closeMyPostsModal.addEventListener('click', closeMyPostsModal);
+            elements.createFirstPost.addEventListener('click', () => {
+                closeMyPostsModal();
+                openCreateModal();
+            });
+            
+            // Edit post modal
+            elements.closeEditModal.addEventListener('click', closeEditPostModal);
+            elements.cancelEdit.addEventListener('click', closeEditPostModal);
+            elements.editPostForm.addEventListener('submit', handleEditPost);
+            elements.deletePostBtn.addEventListener('click', handleDeletePost);
+            
+            // Image upload/remove conflict prevention
+            document.getElementById('post-image')?.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files.length > 0) {
+                    const removeCheckbox = document.getElementById('remove-image-main');
+                    if (removeCheckbox) {
+                        removeCheckbox.checked = false;
+                    }
+                }
+            });
+
+            document.getElementById('edit-post-image')?.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files.length > 0) {
+                    const removeCheckbox = document.getElementById('remove-current-image');
+                    if (removeCheckbox) {
+                        removeCheckbox.checked = false;
+                    }
+                }
+            });
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!elements.userMenu.contains(e.target)) {
+                    closeUserDropdown();
+                }
+                if (!elements.searchSection.contains(e.target)) {
+                    elements.searchResults.classList.add('hidden');
+                }
+            });
+            
+            // Setup users page event listeners
+            setupUsersEventListeners();
+            
+            console.log('✅ Event listeners ready');
+        }
+
+        // Initialize app
+        async function initApp() {
+            console.log('🎬 Initializing app...');
+            
+            // Initialize elements
+            if (!initElements()) {
+                console.error('❌ Failed to initialize elements');
+                return;
+            }
+            
+            // Setup theme
+            initTheme();
+            
+            // Check for saved user session
+            checkSavedUser();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Load initial posts
+            await loadPosts(1);
+            
+            console.log('✅ App initialized successfully!');
+        }
+
+        // Users Page Functions
+        let users = [];
+        let filteredUsers = [];
+        let currentFilter = 'all';
+
+        // Show admin users page (only for admins)
+        function showUsersAdminPage() {
+            console.log('🔄 Showing admin users page...');
+            
+            // Check if user is admin
+            if (!isAdmin()) {
+                showErrorMessage('Bu sayfaya erişim yetkiniz yok.');
+                return;
+            }
+            
+            // Hide posts page and show users page
+            document.getElementById('posts-container').style.display = 'none';
+            document.getElementById('search-section').style.display = 'none';
+            document.getElementById('users-page').classList.add('active');
+            
+            // Update navigation active state
+            document.querySelectorAll('#admin-navigation-list .category-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.getElementById('users-admin-link').classList.add('active');
+            
+            // Load users if not loaded yet
+            if (users.length === 0) {
+                loadUsers();
+            }
+        }
+
+        // Hide admin users page
+        function hideUsersAdminPage() {
+            console.log('🔄 Hiding admin users page...');
+            
+            // Show posts page and hide users page
+            document.getElementById('posts-container').style.display = 'block';
+            document.getElementById('search-section').style.display = 'block';
+            document.getElementById('users-page').classList.remove('active');
+            
+            // Update navigation active state
+            document.querySelectorAll('#admin-navigation-list .category-item').forEach(item => {
+                item.classList.remove('active');
+            });
+        }
+
+        // Load users from API
+        async function loadUsers() {
+            try {
+                document.getElementById('users-loading').classList.remove('hidden');
+                document.getElementById('users-grid').innerHTML = '';
+                document.getElementById('users-empty').classList.add('hidden');
+
+                console.log('🔄 Loading users...');
+                
+                const response = await fetch(`${API_BASE_URL}/users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        userId: currentUser.id 
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                users = data.users || [];
+                
+                console.log('✅ Users loaded:', users.length);
+                
+                // Update admin stats
+                updateAdminStats();
+                
+                // Filter and render users
+                filterUsers(currentFilter);
+
+            } catch (error) {
+                console.error('❌ Error loading users:', error);
+                showErrorMessage('Kullanıcılar yüklenirken hata oluştu.');
+                
+                // Show empty state if no users loaded
+                if (users.length === 0) {
+                    document.getElementById('users-empty').classList.remove('hidden');
+                }
+            } finally {
+                document.getElementById('users-loading').classList.add('hidden');
+            }
+        }
+
+        // Filter users
+        function filterUsers(filter) {
+            currentFilter = filter;
+            
+            // Update filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+
+            // Filter users based on criteria
+            switch (filter) {
+                case 'new':
+                    filteredUsers = users.filter(user => {
+                        const joinDate = new Date(user.createdAt);
+                        const monthAgo = new Date();
+                        monthAgo.setMonth(monthAgo.getMonth() - 1);
+                        return joinDate > monthAgo;
+                    });
+                    break;
+                case 'active':
+                    filteredUsers = users.filter(user => user.postsCount > 0);
+                    break;
+                case 'admin':
+                    filteredUsers = users.filter(user => user.role === 'admin');
+                    break;
+                default:
+                    filteredUsers = [...users];
+            }
+
+            renderUsers();
+        }
+
+        // Search users
+        function searchUsers(query) {
+            if (!query.trim()) {
+                filterUsers(currentFilter);
+                return;
+            }
+
+            filteredUsers = users.filter(user => 
+                user.name.toLowerCase().includes(query.toLowerCase()) ||
+                user.email.toLowerCase().includes(query.toLowerCase()) ||
+                (user.bio && user.bio.toLowerCase().includes(query.toLowerCase()))
+            );
+
+            renderUsers();
+        }
+
+        // Render users
+        function renderUsers() {
+            const container = document.getElementById('users-grid');
+            const emptyState = document.getElementById('users-empty');
+
+            if (filteredUsers.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = filteredUsers.map(user => createUserCard(user)).join('');
+        }
+
+        // Create user card HTML
+        function createUserCard(user) {
+            const initial = user.name.charAt(0).toUpperCase();
+            const joinDate = new Date(user.createdAt);
+            const isNew = (Date.now() - joinDate.getTime()) < (30 * 24 * 60 * 60 * 1000); // 30 days
+            const postsCount = user.postsCount || 0;
+            const isActive = postsCount > 0;
+
+            let badge = '';
+            if (user.role === 'admin') {
+                badge = '<div class="user-badge admin">Admin</div>';
+            } else if (isNew) {
+                badge = '<div class="user-badge new">Yeni</div>';
+            }
+
+            // Admin action buttons (only show for admins and not for current user)
+            let adminActions = '';
+            if (isAdmin() && user._id !== currentUser.id) {
+                adminActions = `
+                    <div class="user-admin-actions">
+                        <button class="admin-action-btn edit" onclick="event.stopPropagation(); editUser('${user._id}')" title="Kullanıcı Düzenle">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="admin-action-btn toggle-role" onclick="event.stopPropagation(); toggleUserRole('${user._id}')" title="Rol Değiştir">
+                            <i class="fas fa-${user.role === 'admin' ? 'user' : 'crown'}"></i>
+                        </button>
+                        <button class="admin-action-btn delete" onclick="event.stopPropagation(); deleteUser('${user._id}')" title="Kullanıcı Sil">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="user-card" onclick="showUserDetail('${user._id}')">
+                    ${badge}
+                    ${adminActions}
+                    <div class="user-card-avatar">
+                        ${initial}
+                    </div>
+                    <div class="user-card-name">${escapeHtml(user.name)}</div>
+                    <div class="user-card-username">@${escapeHtml(user.email.split('@')[0])}</div>
+                    <div class="user-card-bio">${escapeHtml(user.bio || 'Henüz bio eklenmemiş.')}</div>
+                    <div class="user-card-stats">
+                        <div class="user-stat">
+                            <span class="user-stat-number">${postsCount}</span>
+                            <div class="user-stat-label">Gönderi</div>
+                        </div>
+                        <div class="user-stat">
+                            <span class="user-stat-number">${formatDate(user.createdAt)}</span>
+                            <div class="user-stat-label">Katıldı</div>
+                        </div>
+                        <div class="user-stat">
+                            <span class="user-stat-number">${isActive ? 'Aktif' : 'Pasif'}</span>
+                            <div class="user-stat-label">Durum</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show user detail modal
+        async function showUserDetail(userId) {
+            try {
+                const user = users.find(u => u._id === userId);
+                if (!user) return;
+
+                const modal = document.getElementById('user-detail-modal');
+                
+                // Fill user info
+                document.getElementById('user-detail-initial').textContent = user.name.charAt(0).toUpperCase();
+                document.getElementById('user-detail-name').textContent = user.name;
+                document.getElementById('user-detail-username').textContent = `@${user.email.split('@')[0]}`;
+                document.getElementById('user-detail-bio').textContent = user.bio || 'Henüz bio eklenmemiş.';
+
+                // Fill stats
+                const statsContainer = document.getElementById('user-detail-stats');
+                const postsCount = user.postsCount || 0;
+                const joinDate = new Date(user.createdAt);
+                const daysSince = Math.floor((Date.now() - joinDate.getTime()) / (1000 * 60 * 60 * 24));
+
+                statsContainer.innerHTML = `
+                    <div class="user-detail-stat">
+                        <span class="user-detail-stat-number">${postsCount}</span>
+                        <div class="user-detail-stat-label">Toplam Gönderi</div>
+                    </div>
+                    <div class="user-detail-stat">
+                        <span class="user-detail-stat-number">${daysSince}</span>
+                        <div class="user-detail-stat-label">Gün Önce Katıldı</div>
+                    </div>
+                    <div class="user-detail-stat">
+                        <span class="user-detail-stat-number">${user.role === 'admin' ? 'Admin' : 'Üye'}</span>
+                        <div class="user-detail-stat-label">Rol</div>
+                    </div>
+                    <div class="user-detail-stat">
+                        <span class="user-detail-stat-number">${postsCount > 0 ? 'Aktif' : 'Pasif'}</span>
+                        <div class="user-detail-stat-label">Durum</div>
+                    </div>
+                `;
+
+                // Load user's recent posts
+                await loadUserRecentPosts(userId);
+
+                // Show modal
+                modal.classList.add('active');
+
+            } catch (error) {
+                console.error('❌ Error showing user detail:', error);
+                showErrorMessage('Kullanıcı detayları yüklenirken hata oluştu.');
+            }
+        }
+
+        // Load user's recent posts
+        async function loadUserRecentPosts(userId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts?author=${userId}&limit=3`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const userPosts = data.posts || [];
+
+                const container = document.getElementById('user-recent-posts');
+                
+                if (userPosts.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--secondary-text);">
+                            <i class="fas fa-file-text" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                            <p>Henüz gönderi paylaşmamış</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = userPosts.map(post => `
+                    <div style="background: var(--hover-bg); border-radius: 0.75rem; padding: 1rem; margin-bottom: 0.75rem; cursor: pointer;" onclick="openPostDetail('${post._id}')">
+                        <h4 style="font-weight: 600; color: var(--text-color); margin-bottom: 0.5rem;">${escapeHtml(post.title || post.content.substring(0, 50) + '...')}</h4>
+                        <p style="color: var(--secondary-text); font-size: 0.9rem; line-height: 1.4;">${escapeHtml(post.content.substring(0, 100))}${post.content.length > 100 ? '...' : ''}</p>
+                        <div style="display: flex; justify-content: between; align-items: center; margin-top: 0.75rem; font-size: 0.8rem; color: var(--secondary-text);">
+                            <span>${post.category || 'Genel'}</span>
+                            <span>${formatDate(post.createdAt)}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('❌ Error loading user posts:', error);
+                document.getElementById('user-recent-posts').innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--secondary-text);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                        <p>Gönderiler yüklenirken hata oluştu</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Close user detail modal
+        function closeUserDetail() {
+            document.getElementById('user-detail-modal').classList.remove('active');
+        }
+
+        // Admin Functions
+
+        // Update admin statistics
+        function updateAdminStats() {
+            const totalUsers = users.length;
+            const adminUsers = users.filter(user => user.role === 'admin').length;
+            const newUsers = users.filter(user => {
+                const joinDate = new Date(user.createdAt);
+                const monthAgo = new Date();
+                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                return joinDate > monthAgo;
+            }).length;
+            const activeUsers = users.filter(user => (user.postsCount || 0) > 0).length;
+
+            document.getElementById('total-users-stat').textContent = totalUsers;
+            document.getElementById('admin-users-stat').textContent = adminUsers;
+            document.getElementById('new-users-stat').textContent = newUsers;
+            document.getElementById('active-users-stat').textContent = activeUsers;
+        }
+
+        // Edit user (admin only)
+        async function editUser(userId) {
+            if (!isAdmin()) {
+                showErrorMessage('Bu işlem için admin yetkisi gerekli.');
+                return;
+            }
+
+            const user = users.find(u => u._id === userId);
+            if (!user) {
+                showErrorMessage('Kullanıcı bulunamadı.');
+                return;
+            }
+
+            const newName = prompt('Kullanıcı adını düzenle:', user.name);
+            if (newName && newName.trim() !== user.name) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ 
+                            name: newName.trim(),
+                            adminId: currentUser.id 
+                        })
+                    });
+
+                    if (response.ok) {
+                        showSuccessMessage('Kullanıcı başarıyla güncellendi.');
+                        // Update local data
+                        user.name = newName.trim();
+                        renderUsers();
+                    } else {
+                        const error = await response.json();
+                        showErrorMessage(error.message || 'Kullanıcı güncellenirken hata oluştu.');
+                    }
+                } catch (error) {
+                    console.error('❌ Edit user error:', error);
+                    showErrorMessage('Kullanıcı güncellenirken hata oluştu.');
+                }
+            }
+        }
+
+        // Toggle user role (admin only)
+        async function toggleUserRole(userId) {
+            if (!isAdmin()) {
+                showErrorMessage('Bu işlem için admin yetkisi gerekli.');
+                return;
+            }
+
+            const user = users.find(u => u._id === userId);
+            if (!user) {
+                showErrorMessage('Kullanıcı bulunamadı.');
+                return;
+            }
+
+            const newRole = user.role === 'admin' ? 'user' : 'admin';
+            const action = newRole === 'admin' ? 'admin yapmak' : 'admin yetkisini almak';
+            
+            if (!confirm(`${user.name} kullanıcısını ${action} istediğinizden emin misiniz?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/role`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        role: newRole,
+                        adminId: currentUser.id 
+                    })
+                });
+
+                if (response.ok) {
+                    showSuccessMessage(`Kullanıcı rolü başarıyla ${newRole === 'admin' ? 'admin' : 'kullanıcı'} olarak güncellendi.`);
+                    // Update local data
+                    user.role = newRole;
+                    updateAdminStats();
+                    renderUsers();
+                } else {
+                    const error = await response.json();
+                    showErrorMessage(error.message || 'Rol güncellenirken hata oluştu.');
+                }
+            } catch (error) {
+                console.error('❌ Toggle role error:', error);
+                showErrorMessage('Rol güncellenirken hata oluştu.');
+            }
+        }
+
+        // Delete user (admin only)
+        async function deleteUser(userId) {
+            if (!isAdmin()) {
+                showErrorMessage('Bu işlem için admin yetkisi gerekli.');
+                return;
+            }
+
+            const user = users.find(u => u._id === userId);
+            if (!user) {
+                showErrorMessage('Kullanıcı bulunamadı.');
+                return;
+            }
+
+            if (!confirm(`${user.name} kullanıcısını kalıcı olarak silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz ve kullanıcının tüm gönderileri de silinecektir.`)) {
+                return;
+            }
+
+            const confirmText = prompt('Silme işlemini onaylamak için "SİL" yazın:');
+            if (confirmText !== 'SİL') {
+                showErrorMessage('Silme işlemi iptal edildi.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ adminId: currentUser.id })
+                });
+
+                if (response.ok) {
+                    showSuccessMessage('Kullanıcı başarıyla silindi.');
+                    // Remove from local data
+                    users = users.filter(u => u._id !== userId);
+                    updateAdminStats();
+                    renderUsers();
+                } else {
+                    const error = await response.json();
+                    showErrorMessage(error.message || 'Kullanıcı silinirken hata oluştu.');
+                }
+            } catch (error) {
+                console.error('❌ Delete user error:', error);
+                showErrorMessage('Kullanıcı silinirken hata oluştu.');
+            }
+        }
+
+        // Show/hide admin panel based on user role
+        function updateAdminPanelVisibility() {
+            const adminPanel = document.getElementById('admin-panel-section');
+            if (adminPanel) {
+                if (isAdmin()) {
+                    adminPanel.style.display = 'block';
+                } else {
+                    adminPanel.style.display = 'none';
+                    hideUsersAdminPage(); // Hide if currently open
+                }
+            }
+        }
+
+        // Setup users page event listeners
+        function setupUsersEventListeners() {
+            // Filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const filter = btn.getAttribute('data-filter');
+                    filterUsers(filter);
+                });
+            });
+
+            // Users search
+            const searchInput = document.getElementById('users-search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    searchUsers(e.target.value);
+                });
+            }
+
+            // Close modal on overlay click
+            document.getElementById('user-detail-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'user-detail-modal') {
+                    closeUserDetail();
+                }
+            });
+        }
+
+        // Start when DOM is ready
+        document.addEventListener('DOMContentLoaded', initApp);
+        
+        console.log('📜 Script loaded');
+    </script>
+</body>
+</html>

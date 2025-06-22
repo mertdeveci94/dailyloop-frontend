@@ -1,0 +1,7 @@
+# Ignore backend folder (separate repo)
+DailyLoopBackend/
+
+# Ignore other generated files
+.DS_Store
+*.log
+node_modules/
