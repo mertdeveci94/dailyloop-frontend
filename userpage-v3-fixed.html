@@ -77,11 +77,15 @@
             border-radius: 1rem;
             overflow: hidden;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
-            cursor: pointer;
+            cursor: pointer !important;
             height: 440px;
             display: flex;
             flex-direction: column;
             position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
 
         .post-card:hover {
@@ -1488,6 +1492,47 @@
                 padding: 0.5rem;
             }
             
+            /* Hide load more button on mobile (infinite scroll instead) */
+            #load-more-btn {
+                display: none !important;
+            }
+            
+            /* Hide entire sidebar on mobile */
+            .sidebar {
+                display: none !important;
+            }
+        }
+            
+            /* Mobile post detail styles */
+            .mobile-back-header {
+                transition: all 0.2s ease;
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+            }
+            
+            .back-btn:hover {
+                transform: translateX(-2px);
+            }
+            
+            .back-btn:active {
+                transform: translateX(-1px) scale(0.98);
+            }
+            
+            .mobile-post-detail {
+                animation: slideInFromRight 0.3s ease-out;
+            }
+            
+            @keyframes slideInFromRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
             .post-card {
                 height: auto;
                 min-height: 300px;
@@ -1608,6 +1653,7 @@
             <!-- Categories Section -->
             <div class="sidebar-section">
                 <h3 class="sidebar-title">Kategoriler</h3>
+                
                 <div id="categories-list">
                     <a href="#" class="category-item active" data-category="">
                         <i class="fas fa-home category-icon"></i>
@@ -1667,7 +1713,7 @@
             </div>
 
             <!-- Quick Stats -->
-            <div class="sidebar-section">
+            <div class="sidebar-section stats-section">
                 <h3 class="sidebar-title">İstatistikler</h3>
                 <div class="space-y-2 text-sm text-[var(--secondary-text)]">
                     <div class="flex justify-between">
@@ -2297,6 +2343,85 @@
         const API_BASE_URL = window.location.hostname === 'localhost' 
             ? 'http://localhost:3000/api' 
             : 'https://dailyloop-backend-production.up.railway.app/api';
+        
+        const IMAGE_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : 'https://dailyloop-backend-production.up.railway.app';
+        
+        // Mobile detection
+        function isMobile() {
+            return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+        
+        // Mobile share menu toggle
+        function toggleMobileShareMenu() {
+            const shareMenu = document.querySelector('.mobile-share-menu');
+            const chevron = document.querySelector('.mobile-share-menu').parentElement.querySelector('.fa-chevron-down');
+            
+            if (shareMenu.classList.contains('hidden')) {
+                shareMenu.classList.remove('hidden');
+                chevron.classList.remove('fa-chevron-down');
+                chevron.classList.add('fa-chevron-up');
+            } else {
+                shareMenu.classList.add('hidden');
+                chevron.classList.remove('fa-chevron-up');
+                chevron.classList.add('fa-chevron-down');
+            }
+        }
+        
+        // Mobile categories toggle
+        function toggleMobileCategories() {
+            const categoriesList = document.getElementById('categories-list');
+            const chevron = document.querySelector('#mobile-categories-toggle .fa-chevron-down, #mobile-categories-toggle .fa-chevron-up');
+            
+            if (categoriesList.classList.contains('hidden')) {
+                // Opening categories
+                categoriesList.classList.remove('hidden');
+                categoriesList.style.maxHeight = categoriesList.scrollHeight + 'px';
+                chevron.classList.remove('fa-chevron-down');
+                chevron.classList.add('fa-chevron-up');
+            } else {
+                // Closing categories
+                categoriesList.style.maxHeight = '0';
+                setTimeout(() => {
+                    categoriesList.classList.add('hidden');
+                }, 300);
+                chevron.classList.remove('fa-chevron-up');
+                chevron.classList.add('fa-chevron-down');
+            }
+        }
+        
+        // Mobile infinite scroll
+        function setupMobileInfiniteScroll() {
+            if (!isMobile()) return;
+            
+            let isLoadingMore = false;
+            
+            window.addEventListener('scroll', () => {
+                // Only on mobile and when not already loading
+                if (!isMobile() || isLoadingMore || isLoading || !hasMorePosts) return;
+                
+                // Check if user scrolled near bottom (within 300px)
+                const scrollPosition = window.innerHeight + window.pageYOffset;
+                const documentHeight = document.documentElement.offsetHeight;
+                
+                if (scrollPosition >= documentHeight - 300) {
+                    console.log('📱 Mobile infinite scroll triggered');
+                    isLoadingMore = true;
+                    
+                    // Load next page
+                    loadPosts(currentPage + 1).finally(() => {
+                        isLoadingMore = false;
+                    });
+                }
+            });
+        }
+        
+        // Setup mobile UI
+        function setupMobileUI() {
+            // Mobile UI setup is now minimal
+            // Categories are completely hidden on mobile
+        }
 
         // State
         let posts = [];
@@ -2510,7 +2635,18 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.message) {
+                            errorMessage = errorData.message;
+                        }
+                    } catch (e) {
+                        // If we can't parse JSON, keep the generic error
+                    }
+                    const error = new Error(errorMessage);
+                    error.status = response.status;
+                    throw error;
                 }
 
                 return await response.json();
@@ -2670,7 +2806,26 @@
                 
             } catch (error) {
                 console.error('❌ Registration failed:', error);
-                showErrorMessage('Kayıt başarısız. Bu e-posta veya kullanıcı adı zaten kullanılıyor olabilir.');
+                
+                // Handle specific error messages from backend
+                let errorMessage = 'Kayıt başarısız. Lütfen tekrar deneyin.';
+                
+                if (error.message) {
+                    const msg = error.message.toLowerCase();
+                    if (msg.includes('email') && msg.includes('already')) {
+                        errorMessage = 'Bu e-posta adresi zaten kullanılıyor. Lütfen farklı bir e-posta adresi deneyin.';
+                    } else if (msg.includes('username') && msg.includes('already')) {
+                        errorMessage = 'Bu kullanıcı adı zaten alınmış. Lütfen farklı bir kullanıcı adı seçin.';
+                    } else if (msg.includes('email') && msg.includes('invalid')) {
+                        errorMessage = 'Geçersiz e-posta adresi. Lütfen geçerli bir e-posta adresi girin.';
+                    } else if (msg.includes('password') && msg.includes('weak')) {
+                        errorMessage = 'Şifre çok zayıf. Lütfen daha güçlü bir şifre seçin.';
+                    } else if (error.message !== `HTTP ${error.status}`) {
+                        errorMessage = error.message;
+                    }
+                }
+                
+                showErrorMessage(errorMessage);
             }
         }
 
@@ -3276,14 +3431,23 @@
         async function renderPost(post) {
             const postEl = document.createElement('div');
             postEl.className = 'post-card';
-            postEl.onclick = () => openPostDetail(post);
+            // Ensure click event works by adding event listener
+            postEl.addEventListener('click', (e) => {
+                // Don't open detail if clicking on admin buttons or links
+                if (e.target.closest('.admin-controls') || e.target.closest('a')) {
+                    return;
+                }
+                console.log('🖱️ Post clicked:', post.title);
+                openPostDetail(post);
+            });
+            postEl.style.cursor = 'pointer';
             
             // Image or placeholder with priority: uploaded image > video/link thumbnail > category icon
             let mediaHtml = '';
             
             if (post.imageUrl) {
                 // Uploaded image has highest priority
-                mediaHtml = `<img src="http://localhost:3000${post.imageUrl}" alt="Post image" class="post-image">`;
+                mediaHtml = `<img src="${IMAGE_BASE_URL}${post.imageUrl}" alt="Post image" class="post-image">`;
             } else if (post.videoUrl || post.sourceUrl) {
                 // Check for thumbnail (YouTube immediate, others via metadata)
                 const thumbnailUrl = await getThumbnailUrl(post.videoUrl || post.sourceUrl);
@@ -3549,7 +3713,145 @@
             return metadata?.image || null;
         }
 
+        // Mobile-friendly post detail function
+        function openPostDetailMobile(post) {
+            console.log('📱 Opening post detail on mobile:', post.title);
+            
+            // Save current scroll position
+            const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Hide current posts grid
+            const postsContainer = document.getElementById('posts-container');
+            const postsGrid = postsContainer.querySelector('.posts-grid');
+            const backButton = document.createElement('div');
+            
+            // Create stylish back header
+            backButton.className = 'mobile-back-header fixed top-0 left-0 right-0 z-50 flex items-center bg-white bg-opacity-95 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm';
+            backButton.innerHTML = `
+                <button class="back-btn flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i class="fas fa-chevron-left text-lg"></i>
+                    <span class="font-medium">Geri</span>
+                </button>
+                <h2 class="flex-1 text-center font-semibold text-gray-900 truncate px-4">${escapeHtml(post.title || post.content.substring(0, 30) + '...')}</h2>
+                <div class="w-12"></div>
+            `;
+            backButton.onclick = () => {
+                backButton.remove();
+                postsContainer.innerHTML = '';
+                postsContainer.appendChild(postsGrid);
+                // Show load more button again if needed
+                if (hasMorePosts) {
+                    elements.loadMoreBtn.classList.remove('hidden');
+                }
+                // Restore scroll position smoothly
+                setTimeout(() => {
+                    window.scrollTo({
+                        top: scrollPosition,
+                        behavior: 'smooth'
+                    });
+                }, 150);
+            };
+            
+            // Create media content matching modal style
+            let mediaHtml = '';
+            if (post.imageUrl) {
+                mediaHtml = `
+                    <div class="post-detail-media mb-6">
+                        <img src="${IMAGE_BASE_URL}${post.imageUrl}" alt="Post image" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md">
+                    </div>`;
+            } else if (post.thumbnailUrl) {
+                mediaHtml = `
+                    <div class="post-detail-media mb-6">
+                        <img src="${post.thumbnailUrl}" alt="Thumbnail" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md">
+                    </div>`;
+            } else if (post.videoUrl) {
+                // Don't embed video, just show link in actions
+                mediaHtml = '';
+            }
+            
+            const mobileDetailHtml = `
+                <div class="mobile-post-detail min-h-screen" style="background-color: var(--bg-color);">
+                    <div class="max-w-4xl mx-auto p-4 pt-20">
+                        <!-- Header Section -->
+                        <div class="post-detail-header mb-6">
+                            <h1 class="post-detail-title text-2xl font-bold mb-4" style="color: var(--text-color);">${escapeHtml(post.title || post.content)}</h1>
+                            <div class="post-detail-meta flex flex-wrap items-center gap-3 text-sm" style="color: var(--secondary-text);">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-[var(--gradient-from)] to-[var(--gradient-to)] rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                        ${post.author ? post.author.charAt(0).toUpperCase() : 'A'}
+                                    </div>
+                                    <span class="font-medium" style="color: var(--text-color);">${escapeHtml(post.author || 'Anonim')}</span>
+                                </div>
+                                <span>•</span>
+                                <span>${formatDate(post.createdAt)}</span>
+                                ${post.category ? `<span>•</span><span class="px-2 py-1 bg-[var(--accent-color)] text-white rounded-full text-xs font-medium">${post.category}</span>` : ''}
+                            </div>
+                        </div>
+                        
+                        <!-- Content -->
+                        ${post.title ? `<div class="post-detail-content mb-6 leading-relaxed" style="color: var(--text-color);">${escapeHtml(post.content)}</div>` : ''}
+                        
+                        <!-- Media -->
+                        ${mediaHtml}
+                        
+                        <!-- Actions Section -->
+                        <div class="post-detail-actions mt-8 p-6 rounded-lg border" style="background-color: var(--card-bg); border-color: var(--border-color);">
+                            <h3 class="text-lg font-semibold mb-4" style="color: var(--text-color);">Eylemler</h3>
+                            <div class="space-y-3">
+                                ${post.sourceUrl || post.videoUrl ? `
+                                    <a href="${post.sourceUrl || post.videoUrl}" target="_blank" class="flex items-center space-x-3 p-3 bg-[var(--accent-color)] text-white rounded-lg hover:bg-[var(--accent-hover)] transition-colors">
+                                        <i class="fas ${post.videoUrl ? 'fa-play' : 'fa-external-link-alt'} text-sm"></i>
+                                        <span class="font-medium">${post.videoUrl ? 'Videoyu İzle' : 'Kaynak Makaleyi Oku'}</span>
+                                    </a>
+                                ` : ''}
+                                
+                                <button class="flex items-center space-x-3 p-3 border rounded-lg transition-colors w-full" style="border-color: var(--border-color); background-color: var(--hover-bg);">
+                                    <i class="fas fa-heart text-red-500"></i>
+                                    <span class="font-medium" style="color: var(--text-color);">${post.likes || 0} Beğeni</span>
+                                </button>
+                                
+                                <div class="space-y-2">
+                                    <button class="flex items-center space-x-3 p-3 border rounded-lg transition-colors w-full" style="border-color: var(--border-color); background-color: var(--hover-bg);" onclick="toggleMobileShareMenu()">
+                                        <i class="fas fa-share text-blue-500"></i>
+                                        <span class="font-medium" style="color: var(--text-color);">Paylaş</span>
+                                        <i class="fas fa-chevron-down text-xs ml-auto" style="color: var(--secondary-text);"></i>
+                                    </button>
+                                    
+                                    <div class="mobile-share-menu hidden space-y-2 pl-4">
+                                        <a href="#" class="flex items-center space-x-3 p-2 rounded-lg transition-colors" style="background-color: var(--hover-bg);" onclick="shareToX('${escapeHtml(post.title || post.content)}', '${window.location.origin}')">
+                                            <i class="fab fa-x-twitter text-black"></i>
+                                            <span style="color: var(--text-color);">X'te Paylaş</span>
+                                        </a>
+                                        <a href="#" class="flex items-center space-x-3 p-2 rounded-lg transition-colors" style="background-color: var(--hover-bg);" onclick="shareToWhatsApp('${escapeHtml(post.title || post.content)}', '${window.location.origin}')">
+                                            <i class="fab fa-whatsapp text-green-500"></i>
+                                            <span style="color: var(--text-color);">WhatsApp'ta Paylaş</span>
+                                        </a>
+                                        <a href="#" class="flex items-center space-x-3 p-2 rounded-lg transition-colors" style="background-color: var(--hover-bg);" onclick="shareToTelegram('${escapeHtml(post.title || post.content)}', '${window.location.origin}')">
+                                            <i class="fab fa-telegram text-blue-400"></i>
+                                            <span style="color: var(--text-color);">Telegram'da Paylaş</span>
+                                        </a>
+                                        <a href="#" class="flex items-center space-x-3 p-2 rounded-lg transition-colors" style="background-color: var(--hover-bg);" onclick="copyToClipboard('${window.location.origin}', '${escapeHtml(post.title || post.content)}')">
+                                            <i class="fas fa-copy text-gray-500"></i>
+                                            <span style="color: var(--text-color);">Bağlantıyı Kopyala</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(backButton);
+            postsContainer.innerHTML = mobileDetailHtml;
+        }
+
         async function openPostDetail(post) {
+            // Check if mobile
+            if (isMobile()) {
+                return openPostDetailMobile(post);
+            }
+            
             console.log('🔍 Opening post detail:', post.title);
             
             const detailContent = document.getElementById('detail-content');
@@ -3562,7 +3864,7 @@
             if (post.imageUrl) {
                 mediaHtml = `
                     <div class="post-detail-media mb-6">
-                        <img src="http://localhost:3000${post.imageUrl}" alt="Post image" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md">
+                        <img src="${IMAGE_BASE_URL}${post.imageUrl}" alt="Post image" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md">
                     </div>`;
             } else if (post.videoUrl || post.sourceUrl) {
                 const thumbnailUrl = await getThumbnailUrl(post.videoUrl || post.sourceUrl);
@@ -4097,6 +4399,10 @@
             await loadPosts(1);
             
             console.log('✅ App initialized successfully!');
+            
+            // Setup mobile features
+            setupMobileUI();
+            setupMobileInfiniteScroll();
         }
 
         // Users Page Functions
