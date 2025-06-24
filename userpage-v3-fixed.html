@@ -406,6 +406,14 @@
             display: flex;
         }
 
+        .modal.closing {
+            animation: modalFadeOut 0.3s ease-out forwards;
+        }
+
+        .modal.closing .modal-content {
+            animation: modalSlideOut 0.3s ease-out forwards;
+        }
+
         .modal-content {
             background-color: var(--card-bg);
             border-radius: 1rem;
@@ -654,6 +662,22 @@
             to { 
                 transform: scale(1);
                 opacity: 1;
+            }
+        }
+
+        @keyframes modalFadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        @keyframes modalSlideOut {
+            from { 
+                transform: scale(1);
+                opacity: 1;
+            }
+            to { 
+                transform: scale(0.95);
+                opacity: 0;
             }
         }
 
@@ -2852,8 +2876,9 @@
 
         function closeLoginModal() {
             console.log('➖ Closing login modal...');
-            elements.loginModal.classList.remove('active');
-            elements.loginForm.reset();
+            smoothCloseModal(elements.loginModal, () => {
+                elements.loginForm.reset();
+            });
         }
 
         function openRegisterModal() {
@@ -2863,8 +2888,9 @@
 
         function closeRegisterModal() {
             console.log('➖ Closing register modal...');
-            elements.registerModal.classList.remove('active');
-            elements.registerForm.reset();
+            smoothCloseModal(elements.registerModal, () => {
+                elements.registerForm.reset();
+            });
         }
 
         // Category functions
@@ -3062,8 +3088,9 @@
 
         function closeProfileModal() {
             console.log('➖ Closing profile modal...');
-            elements.profileModal.classList.remove('active');
-            elements.profileForm.reset();
+            smoothCloseModal(elements.profileModal, () => {
+                elements.profileForm.reset();
+            });
         }
 
         async function handleProfileUpdate(event) {
@@ -3112,7 +3139,7 @@
 
         function closeMyPostsModal() {
             console.log('➖ Closing my posts modal...');
-            elements.myPostsModal.classList.remove('active');
+            smoothCloseModal(elements.myPostsModal);
         }
 
         async function loadMyPosts() {
@@ -3279,15 +3306,16 @@
 
         function closeEditPostModal() {
             console.log('➖ Closing edit post modal...');
-            elements.editPostModal.classList.remove('active');
-            elements.editPostForm.reset();
-            
-            // Hide remove image option when closing
-            const removeImageCheckbox = document.getElementById('remove-current-image');
-            if (removeImageCheckbox) {
-                removeImageCheckbox.parentElement.parentElement.style.display = 'none';
-                removeImageCheckbox.checked = false;
-            }
+            smoothCloseModal(elements.editPostModal, () => {
+                elements.editPostForm.reset();
+                
+                // Hide remove image option when closing
+                const removeImageCheckbox = document.getElementById('remove-current-image');
+                if (removeImageCheckbox) {
+                    removeImageCheckbox.parentElement.parentElement.style.display = 'none';
+                    removeImageCheckbox.checked = false;
+                }
+            });
         }
 
         async function handleEditPost(event) {
@@ -3627,8 +3655,9 @@
                 removeImageCheckbox.checked = false;
             }
             
-            elements.createModal.classList.remove('active');
-            elements.createForm.reset();
+            smoothCloseModal(elements.createModal, () => {
+                elements.createForm.reset();
+            });
         }
 
         // YouTube thumbnail extraction function
@@ -4064,14 +4093,24 @@
             elements.detailModal.classList.add('active');
         }
 
+        // Smooth modal close function
+        function smoothCloseModal(modal, callback) {
+            modal.classList.add('closing');
+            setTimeout(() => {
+                modal.classList.remove('active', 'closing');
+                if (callback) callback();
+            }, 300); // Match animation duration
+        }
+
         function closePostDetail() {
             console.log('➖ Closing post detail...');
-            elements.detailModal.classList.remove('active');
-            // Close share menu if open
-            const shareMenu = document.getElementById('share-menu');
-            if (shareMenu) {
-                shareMenu.classList.remove('active');
-            }
+            smoothCloseModal(elements.detailModal, () => {
+                // Close share menu if open
+                const shareMenu = document.getElementById('share-menu');
+                if (shareMenu) {
+                    shareMenu.classList.remove('active');
+                }
+            });
         }
 
         // Share Functions
