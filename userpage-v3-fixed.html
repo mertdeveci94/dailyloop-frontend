@@ -4373,6 +4373,28 @@
             setupModalDragProtection(elements.myPostsModal);
             setupModalDragProtection(elements.editPostModal);
             
+            // ESC key to close modals
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    // Close any open modal
+                    if (elements.detailModal.classList.contains('active')) {
+                        closePostDetail();
+                    } else if (elements.createModal.classList.contains('active')) {
+                        closeCreateModal();
+                    } else if (elements.loginModal.classList.contains('active')) {
+                        closeLoginModal();
+                    } else if (elements.registerModal.classList.contains('active')) {
+                        closeRegisterModal();
+                    } else if (elements.profileModal.classList.contains('active')) {
+                        closeProfileModal();
+                    } else if (elements.myPostsModal.classList.contains('active')) {
+                        closeMyPostsModal();
+                    } else if (elements.editPostModal.classList.contains('active')) {
+                        closeEditPostModal();
+                    }
+                }
+            });
+            
             // Profile modal
             elements.closeProfileModal.addEventListener('click', closeProfileModal);
             elements.cancelProfile.addEventListener('click', closeProfileModal);
