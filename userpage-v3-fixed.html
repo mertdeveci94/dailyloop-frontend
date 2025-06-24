@@ -8,14 +8,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg-color: #FFFFFF;
-            --text-color: #1F2937;
+            --bg-color: #F1F5F9;
+            --text-color: #0F172A;
             --card-bg: #FFFFFF;
-            --border-color: #E5E7EB;
-            --hover-bg: #F9FAFB;
+            --border-color: #94A3B8;
+            --hover-bg: #E2E8F0;
             --accent-color: #8B5CF6;
             --accent-hover: #7C3AED;
-            --secondary-text: #6B7280;
+            --secondary-text: #334155;
             --gradient-from: #8B5CF6;
             --gradient-to: #EC4899;
         }
@@ -78,7 +78,7 @@
             overflow: hidden;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             cursor: pointer !important;
-            height: 440px;
+            height: 480px;
             display: flex;
             flex-direction: column;
             position: relative;
@@ -2227,7 +2227,7 @@
                 </div>
 
                 <div id="my-posts-container">
-                    <div id="my-posts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div id="my-posts-grid" class="posts-grid">
                         <!-- User's posts will be loaded here -->
                     </div>
                     
@@ -3144,40 +3144,36 @@
             
             posts.forEach(post => {
                 const postEl = document.createElement('div');
-                postEl.className = 'my-post-card';
+                postEl.className = 'post-card';
                 
                 postEl.innerHTML = `
-                    <div class="my-post-actions">
-                        <button class="my-post-btn view" onclick="event.stopPropagation(); viewMyPost('${post._id}')" title="Detayı Gör">
+                    <div class="admin-controls">
+                        <button class="admin-btn" onclick="event.stopPropagation(); viewMyPost('${post._id}')" title="Detayı Gör" style="background: rgba(34, 197, 94, 0.9);">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="my-post-btn edit" onclick="event.stopPropagation(); editMyPost('${post._id}')" title="Düzenle">
+                        <button class="admin-btn edit" onclick="event.stopPropagation(); editMyPost('${post._id}')" title="Düzenle">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="my-post-btn delete" onclick="event.stopPropagation(); deleteMyPost('${post._id}')" title="Sil">
+                        <button class="admin-btn delete" onclick="event.stopPropagation(); deleteMyPost('${post._id}')" title="Sil">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                     
-                    <div class="my-post-title">${escapeHtml(post.title || post.content.substring(0, 50) + '...')}</div>
-                    <div class="my-post-content">${escapeHtml(post.content)}</div>
-                    
-                    <div class="my-post-meta">
-                        <div class="flex items-center gap-2">
-                            <span class="my-post-category">${post.category || 'Genel'}</span>
-                            <span>${formatDate(post.createdAt)}</span>
-                        </div>
-                        <div class="my-post-stats">
-                            <span title="Beğeni">
-                                <i class="fas fa-heart text-red-500"></i>
-                                ${post.likes || 0}
-                            </span>
-                            <span title="Yorum">
-                                <i class="fas fa-comment text-blue-500"></i>
-                                ${post.comments?.length || 0}
-                            </span>
+                    <div class="post-content">
+                        <h3 class="post-title">${escapeHtml(post.title || post.content)}</h3>
+                        ${post.title ? `<p class="post-description">${escapeHtml(post.content)}</p>` : ''}
+                        <div class="post-meta">
+                            <span class="text-sm text-[var(--secondary-text)]">${post.author || 'Sen'}</span>
+                            <span class="text-sm text-[var(--secondary-text)]">${formatDate(post.createdAt)}</span>
                         </div>
                     </div>
+                    
+                    ${post.imageUrl ? 
+                        `<img src="${IMAGE_BASE_URL}${post.imageUrl}" alt="Post image" class="post-image" onerror="handleImageError(this)">` : 
+                        `<div class="post-placeholder">
+                            <i class="fas fa-file-text"></i>
+                        </div>`
+                    }
                 `;
                 
                 // Removed direct click handler to prevent modal behind modal
@@ -3459,7 +3455,7 @@
                     
                     mediaHtml = `
                         <div class="post-image-container relative">
-                            <img src="${thumbnailUrl}" alt="${isVideo ? 'Video' : 'Article'} thumbnail" class="post-image">
+                            <img src="${thumbnailUrl}" alt="${isVideo ? 'Video' : 'Article'} thumbnail" class="post-image" onerror="handleImageError(this)">
                             ${isVideo ? `
                                 <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 hover:bg-opacity-40 transition-all duration-200">
                                     <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
@@ -3487,7 +3483,7 @@
                     mediaHtml = `
                         <div class="post-placeholder">
                             <i class="fas ${icon}"></i>
-                            <div class="absolute bottom-2 right-2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium">
+                            <div class="absolute bottom-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
                                 Link
                             </div>
                         </div>`;
@@ -3701,16 +3697,57 @@
         }
 
         // Enhanced function that also checks for web metadata
+        function handleImageError(img) {
+            console.log('🖼️ Image failed to load, replacing with placeholder');
+            const container = img.parentElement;
+            const isVideoThumb = img.alt.includes('Video') || img.alt.includes('YouTube');
+            
+            // Create fallback placeholder
+            const placeholder = document.createElement('div');
+            placeholder.className = 'post-placeholder';
+            placeholder.innerHTML = `<i class="fas ${isVideoThumb ? 'fa-video' : 'fa-image'}"></i>`;
+            
+            // Replace the image with placeholder
+            container.replaceChild(placeholder, img);
+        }
+
         async function getThumbnailUrl(url) {
             if (!url) return null;
             
-            // YouTube has priority (immediate result)
-            const youtubeThumbnail = getYouTubeThumbnail(url);
-            if (youtubeThumbnail) return youtubeThumbnail;
-            
-            // For other URLs, try to fetch metadata
-            const metadata = await fetchUrlMetadata(url);
-            return metadata?.image || null;
+            try {
+                // YouTube has priority (immediate result)
+                const youtubeThumbnail = getYouTubeThumbnail(url);
+                if (youtubeThumbnail) {
+                    // Test if YouTube thumbnail is accessible
+                    const testImg = new Image();
+                    testImg.src = youtubeThumbnail;
+                    await new Promise((resolve, reject) => {
+                        testImg.onload = resolve;
+                        testImg.onerror = reject;
+                        setTimeout(reject, 3000); // 3 second timeout
+                    });
+                    return youtubeThumbnail;
+                }
+                
+                // For other URLs, try to fetch metadata
+                const metadata = await fetchUrlMetadata(url);
+                if (metadata?.image) {
+                    // Test if the metadata image is accessible
+                    const testImg = new Image();
+                    testImg.src = metadata.image;
+                    await new Promise((resolve, reject) => {
+                        testImg.onload = resolve;
+                        testImg.onerror = reject;
+                        setTimeout(reject, 3000); // 3 second timeout
+                    });
+                    return metadata.image;
+                }
+                
+                return null;
+            } catch (error) {
+                console.log('🖼️ Thumbnail failed to load:', error);
+                return null;
+            }
         }
 
         // Mobile-friendly post detail function
@@ -3757,12 +3794,12 @@
             if (post.imageUrl) {
                 mediaHtml = `
                     <div class="post-detail-media mb-6">
-                        <img src="${IMAGE_BASE_URL}${post.imageUrl}" alt="Post image" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md">
+                        <img src="${IMAGE_BASE_URL}${post.imageUrl}" alt="Post image" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md" onerror="handleImageError(this)">
                     </div>`;
             } else if (post.thumbnailUrl) {
                 mediaHtml = `
                     <div class="post-detail-media mb-6">
-                        <img src="${post.thumbnailUrl}" alt="Thumbnail" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md">
+                        <img src="${post.thumbnailUrl}" alt="Thumbnail" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md" onerror="handleImageError(this)">
                     </div>`;
             } else if (post.videoUrl) {
                 // Don't embed video, just show link in actions
@@ -3799,7 +3836,7 @@
                             <h3 class="text-lg font-semibold mb-4" style="color: var(--text-color);">Eylemler</h3>
                             <div class="space-y-3">
                                 ${post.sourceUrl || post.videoUrl ? `
-                                    <a href="${post.sourceUrl || post.videoUrl}" target="_blank" class="flex items-center space-x-3 p-3 bg-[var(--accent-color)] text-white rounded-lg hover:bg-[var(--accent-hover)] transition-colors">
+                                    <a href="${addDailyLoopRef(post.sourceUrl || post.videoUrl)}" target="_blank" class="flex items-center space-x-3 p-3 bg-[var(--accent-color)] text-white rounded-lg hover:bg-[var(--accent-hover)] transition-colors">
                                         <i class="fas ${post.videoUrl ? 'fa-play' : 'fa-external-link-alt'} text-sm"></i>
                                         <span class="font-medium">${post.videoUrl ? 'Videoyu İzle' : 'Kaynak Makaleyi Oku'}</span>
                                     </a>
@@ -3864,7 +3901,7 @@
             if (post.imageUrl) {
                 mediaHtml = `
                     <div class="post-detail-media mb-6">
-                        <img src="${IMAGE_BASE_URL}${post.imageUrl}" alt="Post image" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md">
+                        <img src="${IMAGE_BASE_URL}${post.imageUrl}" alt="Post image" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md" onerror="handleImageError(this)">
                     </div>`;
             } else if (post.videoUrl || post.sourceUrl) {
                 const thumbnailUrl = await getThumbnailUrl(post.videoUrl || post.sourceUrl);
@@ -3875,8 +3912,8 @@
                     const isVideo = isYoutube || url.includes('vimeo') || url.includes('video');
                     mediaHtml = `
                         <div class="post-detail-media mb-6">
-                            <div class="relative group cursor-pointer" onclick="window.open('${url}', '_blank')">
-                                <img src="${thumbnailUrl}" alt="${isVideo ? 'Video' : 'Article'} thumbnail" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md">
+                            <div class="relative group cursor-pointer" onclick="window.open('${addDailyLoopRef(url)}', '_blank')">
+                                <img src="${thumbnailUrl}" alt="${isVideo ? 'Video' : 'Article'} thumbnail" class="post-detail-image w-full max-w-lg mx-auto rounded-lg shadow-md" onerror="handleImageError(this)">
                                 ${isVideo ? `
                                     <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg">
                                         <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
@@ -3893,7 +3930,7 @@
                     // For non-video URLs, show a simple preview card
                     mediaHtml = `
                         <div class="post-detail-media mb-6">
-                            <div class="border border-[var(--border-color)] rounded-lg p-4 bg-[var(--hover-bg)] cursor-pointer hover:bg-[var(--border-color)] transition-colors" onclick="window.open('${post.sourceUrl || post.videoUrl}', '_blank')">
+                            <div class="border border-[var(--border-color)] rounded-lg p-4 bg-[var(--hover-bg)] cursor-pointer hover:bg-[var(--border-color)] transition-colors" onclick="window.open('${addDailyLoopRef(post.sourceUrl || post.videoUrl)}', '_blank')">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-12 h-12 bg-gradient-to-br from-[var(--gradient-from)] to-[var(--gradient-to)] rounded-lg flex items-center justify-center">
                                         <i class="fas fa-external-link-alt text-white"></i>
@@ -3937,7 +3974,7 @@
                         <h3>Eylemler</h3>
                         <div class="space-y-3">
                             ${post.sourceUrl || post.videoUrl ? `
-                                <a href="${post.sourceUrl || post.videoUrl}" target="_blank" class="flex items-center space-x-3 p-3 bg-[var(--accent-color)] text-white rounded-lg hover:bg-[var(--accent-hover)] transition-colors">
+                                <a href="${addDailyLoopRef(post.sourceUrl || post.videoUrl)}" target="_blank" class="flex items-center space-x-3 p-3 bg-[var(--accent-color)] text-white rounded-lg hover:bg-[var(--accent-hover)] transition-colors">
                                     <i class="fas ${post.videoUrl ? 'fa-play' : 'fa-external-link-alt'} text-sm"></i>
                                     <span class="font-medium">${post.videoUrl ? 'Videoyu İzle' : 'Kaynak Makaleyi Oku'}</span>
                                 </a>
@@ -4185,6 +4222,19 @@
         }
 
         // Utility functions
+        function addDailyLoopRef(url) {
+            if (!url) return url;
+            try {
+                const urlObj = new URL(url);
+                urlObj.searchParams.set('ref', 'dailyloop');
+                return urlObj.toString();
+            } catch (e) {
+                // If URL is invalid, just add ref parameter manually
+                const separator = url.includes('?') ? '&' : '?';
+                return url + separator + 'ref=dailyloop';
+            }
+        }
+
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
