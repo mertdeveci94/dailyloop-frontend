@@ -2380,7 +2380,16 @@
         // Mobile share menu toggle
         function toggleMobileShareMenu() {
             const shareMenu = document.querySelector('.mobile-share-menu');
-            const chevron = document.querySelector('.mobile-share-menu').parentElement.querySelector('.fa-chevron-down');
+            if (!shareMenu) {
+                console.warn('Mobile share menu not found');
+                return;
+            }
+            
+            const chevron = shareMenu.parentElement?.querySelector('.fa-chevron-down');
+            if (!chevron) {
+                console.warn('Mobile share menu chevron not found');
+                return;
+            }
             
             if (shareMenu.classList.contains('hidden')) {
                 shareMenu.classList.remove('hidden');
@@ -2396,7 +2405,16 @@
         // Mobile categories toggle
         function toggleMobileCategories() {
             const categoriesList = document.getElementById('categories-list');
+            if (!categoriesList) {
+                console.warn('Categories list not found');
+                return;
+            }
+            
             const chevron = document.querySelector('#mobile-categories-toggle .fa-chevron-down, #mobile-categories-toggle .fa-chevron-up');
+            if (!chevron) {
+                console.warn('Mobile categories toggle chevron not found');
+                return;
+            }
             
             if (categoriesList.classList.contains('hidden')) {
                 // Opening categories
@@ -3912,6 +3930,17 @@
             postsContainer.innerHTML = mobileDetailHtml;
         }
 
+        // Wrapper function to handle both post objects and post IDs
+        async function openPostDetailById(postId) {
+            const post = posts.find(p => p._id === postId);
+            if (!post) {
+                console.error('Post not found:', postId);
+                showErrorMessage('Gönderi bulunamadı.');
+                return;
+            }
+            return openPostDetail(post);
+        }
+
         async function openPostDetail(post) {
             // Check if mobile
             if (isMobile()) {
@@ -4117,6 +4146,11 @@
         function toggleShareMenu(event) {
             event.stopPropagation();
             const shareMenu = document.getElementById('share-menu');
+            if (!shareMenu) {
+                console.warn('Share menu not found');
+                return;
+            }
+            
             shareMenu.classList.toggle('active');
             
             // Close menu when clicking outside
@@ -4164,13 +4198,25 @@
             } catch (err) {
                 console.error('Clipboard copy failed:', err);
                 // Fallback for older browsers
-                const textArea = document.createElement('textarea');
-                textArea.value = url;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                showSuccessMessage('Bağlantı panoya kopyalandı!');
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = url;
+                    textArea.style.position = 'fixed';
+                    textArea.style.opacity = '0';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    const success = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    if (success) {
+                        showSuccessMessage('Bağlantı panoya kopyalandı!');
+                    } else {
+                        showErrorMessage('Bağlantı kopyalanamadı. Lütfen manuel olarak kopyalayın.');
+                    }
+                } catch (fallbackErr) {
+                    console.error('Fallback clipboard copy failed:', fallbackErr);
+                    showErrorMessage('Bağlantı kopyalanamadı. Lütfen manuel olarak kopyalayın.');
+                }
             }
         }
 
@@ -4811,7 +4857,7 @@
                 }
 
                 container.innerHTML = userPosts.map(post => `
-                    <div style="background: var(--hover-bg); border-radius: 0.75rem; padding: 1rem; margin-bottom: 0.75rem; cursor: pointer;" onclick="openPostDetail('${post._id}')">
+                    <div style="background: var(--hover-bg); border-radius: 0.75rem; padding: 1rem; margin-bottom: 0.75rem; cursor: pointer;" onclick="openPostDetailById('${post._id}')">
                         <h4 style="font-weight: 600; color: var(--text-color); margin-bottom: 0.5rem;">${escapeHtml(post.title || post.content.substring(0, 50) + '...')}</h4>
                         <p style="color: var(--secondary-text); font-size: 0.9rem; line-height: 1.4;">${escapeHtml(post.content.substring(0, 100))}${post.content.length > 100 ? '...' : ''}</p>
                         <div style="display: flex; justify-content: between; align-items: center; margin-top: 0.75rem; font-size: 0.8rem; color: var(--secondary-text);">
